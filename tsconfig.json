@@ -1,0 +1,33 @@
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "ESNext",
+    "strict": true,
+    "jsx": "preserve",
+    "moduleResolution": "bundler",
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
+    "types": ["vite/client", "unplugin-vue-router/client", "node"],
+    "paths": {
+      "@/*": ["./src/*"],
+    },
+    "useDefineForClassFields": true,
+    "lib": ["ES2020", "ESNext.Array", "DOM", "DOM.Iterable", "ES2023.Array"],
+    /* Bundler mode */
+    "allowImportingTsExtensions": false,
+    "isolatedModules": true,
+    "noEmit": true,
+
+  },
+  "include": ["src/**/*.ts", "src/**/*.d.ts", "src/**/*.vue", "env.d.ts","./typed-router.d.ts"],
+  "exclude": ["node_modules"],
+  "references": [
+    {
+      "path": "./tsconfig.node.json"
+    },
+    {
+      "path": "./tsconfig.app.json"
+    },
+  ]
+}
