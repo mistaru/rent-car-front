@@ -8,7 +8,6 @@ import { createVuetify } from 'vuetify';
 
 export default createVuetify({
   components: {
-
     VDateInput,
   },
   locale: {
@@ -16,6 +15,23 @@ export default createVuetify({
     messages: { ru },
   },
   theme: {
-    defaultTheme: 'light',
+    defaultTheme: 'luxedrive',
+    themes: {
+      luxedrive: {
+        dark: false,
+        colors: {
+          primary: '#5C3BBF',
+          'primary-darken-1': '#4527A0',
+          secondary: '#283593',
+          accent: '#B388FF',
+          surface: '#FFFFFF',
+          background: '#F8F7FC',
+          error: '#E53935',
+          info: '#1E88E5',
+          success: '#43A047',
+          warning: '#FB8C00',
+        },
+      },
+    },
   },
 });

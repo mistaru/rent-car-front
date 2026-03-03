@@ -5,6 +5,19 @@ const staticRoutes: RouteRecordRaw[] = [
     path: '/',
     name: 'Home',
     component: () => import('@/pages/Home.vue'),
+    meta: { public: true },
+  },
+  {
+    path: '/vehicles',
+    name: 'Vehicles',
+    component: () => import('@/pages/Vehicles.vue'),
+    meta: { public: true },
+  },
+  {
+    path: '/checkout/:id?',
+    name: 'Checkout',
+    component: () => import('@/pages/Checkout.vue'),
+    meta: { public: true },
   },
   {
     path: '/login',

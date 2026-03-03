@@ -75,6 +75,7 @@ const goToProfile = () => {
 };
 
 const isLoginPage = computed(() => router.currentRoute.value.path === '/login');
+const isPublicPage = computed(() => router.currentRoute.value.meta?.public === true);
 
 const convertTimesToMilliseconds = (time1: number, time2: number) => {
   return Math.abs(time1 - time2);
@@ -101,7 +102,7 @@ watch(timeNow, (newTimeNow) => {
     }
   }
 });
-if (!isLoginPage.value) {
+if (!isLoginPage.value && !isPublicPage.value) {
   store.fetchMenu();
   store.init().then(() => {
     store.initialized = true;
@@ -111,7 +112,7 @@ if (!isLoginPage.value) {
 
 <template>
   <v-app>
-    <template v-if="isLoginPage">
+    <template v-if="isLoginPage || isPublicPage">
       <router-view />
     </template>
 

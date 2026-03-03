@@ -31,8 +31,9 @@ router.isReady().then(() => {
 
 router.beforeEach(async(to, _from, next) => {
   const token = sessionStorage.getItem('token');
+  const isPublic = to.meta?.public === true;
 
-  if (!token &&  to.path !== '/login') {
+  if (!token && !isPublic && to.path !== '/login') {
     return next('/login');
   }
 
