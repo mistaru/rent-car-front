@@ -3,16 +3,28 @@
     <v-card-text>
       <v-row align="center" dense>
         <v-col cols="12" sm="6" md="3">
-          <v-text-field
+          <v-autocomplete
             v-model="vehicleStore.searchParams.pickupLocation"
+            :items="vehicleStore.locations"
+            item-title="name"
+            item-value="id"
             label="Pick-up Location"
             prepend-inner-icon="mdi-map-marker"
             variant="outlined"
             density="comfortable"
             rounded="lg"
             hide-details
-            placeholder="City or Airport"
-          />
+            placeholder="Search location..."
+            persistent-placeholder
+            no-data-text="No locations found"
+            clearable
+          >
+            <template #item="{ item, props }">
+              <v-list-item v-bind="props">
+                <template #subtitle>{{ item.raw.city }}, {{ item.raw.country }}</template>
+              </v-list-item>
+            </template>
+          </v-autocomplete>
         </v-col>
         <v-col cols="12" sm="6" md="3">
           <v-text-field
@@ -24,6 +36,7 @@
             rounded="lg"
             type="datetime-local"
             hide-details
+            persistent-placeholder
           />
         </v-col>
         <v-col cols="12" sm="6" md="3">
@@ -36,6 +49,7 @@
             rounded="lg"
             type="datetime-local"
             hide-details
+            persistent-placeholder
           />
         </v-col>
         <v-col cols="12" sm="6" md="3">
@@ -45,7 +59,7 @@
             size="large"
             rounded="lg"
             elevation="0"
-            @click="vehicleStore.updateSearch()"
+            @click="vehicleStore.updateSearch({})"
           >
             <v-icon start>mdi-magnify</v-icon>
             Update Search
@@ -57,9 +71,16 @@
 </template>
 
 <script setup lang="ts">
+import { onMounted } from 'vue';
 import { useVehicleStore } from '@/stores/vehicles';
 
 const vehicleStore = useVehicleStore();
+
+onMounted(() => {
+  if (vehicleStore.locations.length === 0) {
+    vehicleStore.fetchLocations();
+  }
+});
 </script>
 
 <style scoped>

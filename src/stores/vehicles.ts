@@ -11,13 +11,16 @@ export interface Vehicle {
   fuelType: 'Gasoline' | 'Diesel' | 'Electric' | 'Hybrid';
   transmission: 'Automatic' | 'Manual';
   pricePerDay: number;
+  minPricePerDay: number | null;
   image: string;
   status: 'available' | 'booked' | 'unavailable';
   carClass: string;
+  pricingTemplateName: string | null;
+  pricingTemplateId: number | null;
 }
 
 export interface SearchParams {
-  pickupLocation: string;
+  pickupLocation: number | null;
   pickupDate: string | null;
   pickupTime: string | null;
   dropoffDate: string | null;
@@ -32,6 +35,13 @@ export interface Filters {
   yearTo: number | null;
 }
 
+export interface LocationItem {
+  id: number;
+  name: string;
+  city: string;
+  country: string;
+}
+
 const API_BASE = 'http://localhost:8081';
 
 export const useVehicleStore = defineStore('vehicles', () => {
@@ -44,9 +54,12 @@ export const useVehicleStore = defineStore('vehicles', () => {
   const page = ref(0);
   const pageSize = ref(8);
 
+  // Локации для выпадающих списков
+  const locations = ref<LocationItem[]>([]);
+
   // Фильтры и параметры поиска
   const searchParams = ref<SearchParams>({
-    pickupLocation: '',
+    pickupLocation: null,
     pickupDate: null,
     pickupTime: null,
     dropoffDate: null,
@@ -79,7 +92,7 @@ export const useVehicleStore = defineStore('vehicles', () => {
       if (filters.value.yearFrom === null && filters.value.yearTo === null && filters.value.yearFrom !== undefined && filters.value.yearTo !== undefined && filters.value.yearFrom === filters.value.yearTo) {
         params.append('year', String(filters.value.yearFrom));
       }
-      if (searchParams.value.pickupLocation && !isNaN(Number(searchParams.value.pickupLocation))) params.append('locationId', String(searchParams.value.pickupLocation));
+      if (searchParams.value.pickupLocation !== null) params.append('locationId', String(searchParams.value.pickupLocation));
       if (searchParams.value.pickupDate) params.append('pickupDate', searchParams.value.pickupDate);
       if (searchParams.value.dropoffDate) params.append('dropoffDate', searchParams.value.dropoffDate);
       params.append('page', String(page.value));
@@ -90,7 +103,7 @@ export const useVehicleStore = defineStore('vehicles', () => {
       vehicles.value = data.content;
       totalCount.value = data.totalElements;
       totalPages.value = data.totalPages;
-      carClasses.value = [...new Set(data.content.map((v: Vehicle) => v.carClass))].sort();
+      carClasses.value = [...new Set(data.content.map((v: Vehicle) => v.carClass))] as string[];
     } catch (e: any) {
       error.value = e.message || 'Ошибка';
     } finally {
@@ -158,6 +171,17 @@ export const useVehicleStore = defineStore('vehicles', () => {
     fetchVehicles();
   }
 
+  async function fetchLocations() {
+    try {
+      const res = await fetch(`${API_BASE}/api/v1/locations`);
+      if (res.ok) {
+        locations.value = await res.json();
+      }
+    } catch (e) {
+      console.error('Failed to fetch locations', e);
+    }
+  }
+
   return {
     vehicles,
     loading,
@@ -169,8 +193,10 @@ export const useVehicleStore = defineStore('vehicles', () => {
     searchParams,
     filters,
     carClasses,
+    locations,
     fetchVehicles,
     fetchVehicleById,
+    fetchLocations,
     nextPage,
     prevPage,
     setPage,

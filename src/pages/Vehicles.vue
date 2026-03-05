@@ -105,6 +105,7 @@
 </template>
 
 <script setup lang="ts">
+import { onMounted } from 'vue';
 import { useVehicleStore } from '@/stores/vehicles';
 import SearchBar from '@/components/luxedrive/SearchBar.vue';
 import FilterPanel from '@/components/luxedrive/FilterPanel.vue';
@@ -112,6 +113,10 @@ import VehicleCard from '@/components/luxedrive/VehicleCard.vue';
 import LuxeFooter from '@/components/luxedrive/LuxeFooter.vue';
 
 const vehicleStore = useVehicleStore();
+
+onMounted(() => {
+  vehicleStore.fetchVehicles();
+});
 </script>
 
 <style scoped>

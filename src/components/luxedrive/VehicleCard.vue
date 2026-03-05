@@ -73,9 +73,11 @@
 
       <div class="d-flex align-center justify-space-between mt-auto">
         <div>
-          <span class="text-caption text-medium-emphasis">Starting from</span>
+          <span class="text-caption text-medium-emphasis">
+            {{ vehicle.minPricePerDay ? 'Starting from' : 'Per day' }}
+          </span>
           <div class="text-h6 font-weight-bold text-primary">
-            ${{ vehicle.pricePerDay }}<span class="text-caption font-weight-regular">/day</span>
+            ${{ vehicle.minPricePerDay || vehicle.pricePerDay }}<span class="text-caption font-weight-regular">/day</span>
           </div>
         </div>
         <v-btn

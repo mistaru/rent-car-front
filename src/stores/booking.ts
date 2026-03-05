@@ -3,10 +3,12 @@ import { ref, computed } from 'vue';
 import type { Vehicle } from './vehicles';
 
 export interface BookingDetails {
-  pickupLocation: string;
-  dropoffLocation: string;
-  date: string | null;
-  time: string | null;
+  pickupLocation: number | null;
+  dropoffLocation: number | null;
+  pickupDate: string | null;
+  pickupTime: string | null;
+  dropoffDate: string | null;
+  dropoffTime: string | null;
 }
 
 export interface PersonalInfo {
@@ -38,10 +40,12 @@ export interface PriceBreakdown {
   days: number;
   pricePerDay: number;
   baseAmount: number;
+  tierName: string | null;
   addOnItems: Array<{ name: string; pricePerDay: number; total: number }>;
   addOnsAmount: number;
   serviceFee: number;
   totalAmount: number;
+  prepaymentAmount: number;
   currency: string;
 }
 
@@ -51,10 +55,12 @@ export const useBookingStore = defineStore('booking', () => {
   const selectedVehicle = ref<Vehicle | null>(null);
 
   const bookingDetails = ref<BookingDetails>({
-    pickupLocation: '',
-    dropoffLocation: '',
-    date: null,
-    time: null,
+    pickupLocation: null,
+    dropoffLocation: null,
+    pickupDate: null,
+    pickupTime: null,
+    dropoffDate: null,
+    dropoffTime: null,
   });
 
   const personalInfo = ref<PersonalInfo>({
@@ -97,9 +103,13 @@ export const useBookingStore = defineStore('booking', () => {
   const priceBreakdown = ref<PriceBreakdown | null>(null);
 
   const rentalDays = computed(() => {
-    // TODO: вычислять по датам pickupDate и dropoffDate
-    if (!bookingDetails.value.date) return 1;
-    return 3;
+    const { pickupDate, dropoffDate } = bookingDetails.value;
+    if (!pickupDate || !dropoffDate) return 1;
+    const start = new Date(pickupDate);
+    const end = new Date(dropoffDate);
+    const diffMs = end.getTime() - start.getTime();
+    const days = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+    return days > 0 ? days : 1;
   });
 
   const rentalRate = computed(() => {
@@ -137,8 +147,8 @@ export const useBookingStore = defineStore('booking', () => {
 
   const isBookingDetailsValid = computed(() => {
     return (
-      bookingDetails.value.pickupLocation.trim().length > 0 &&
-      bookingDetails.value.dropoffLocation.trim().length > 0
+      bookingDetails.value.pickupLocation !== null &&
+      bookingDetails.value.dropoffLocation !== null
     );
   });
 
@@ -162,10 +172,12 @@ export const useBookingStore = defineStore('booking', () => {
     selectedVehicle.value = vehicle;
   }
 
-  function setBookingFromSearch(params: { pickupLocation: string; pickupDate: string | null; pickupTime: string | null }) {
+  function setBookingFromSearch(params: { pickupLocation: number | null; pickupDate: string | null; pickupTime: string | null; dropoffDate?: string | null; dropoffTime?: string | null }) {
     bookingDetails.value.pickupLocation = params.pickupLocation;
-    bookingDetails.value.date = params.pickupDate;
-    bookingDetails.value.time = params.pickupTime;
+    bookingDetails.value.pickupDate = params.pickupDate;
+    bookingDetails.value.pickupTime = params.pickupTime;
+    if (params.dropoffDate !== undefined) bookingDetails.value.dropoffDate = params.dropoffDate;
+    if (params.dropoffTime !== undefined) bookingDetails.value.dropoffTime = params.dropoffTime;
   }
 
   async function fetchLocations() {
@@ -184,6 +196,10 @@ export const useBookingStore = defineStore('booking', () => {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(personalInfo.value),
     });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.message || 'Failed to create customer');
+    }
     return await res.json();
   }
 
@@ -197,12 +213,12 @@ export const useBookingStore = defineStore('booking', () => {
       return '';
     }).filter(Boolean);
     const params = new URLSearchParams({
-      pricePerDay: String(selectedVehicle.value.pricePerDay),
       days: String(days),
       currency: 'USD',
     });
     addOns.forEach(a => params.append('addOns', a));
-    const res = await fetch(`${API_BASE}/api/v1/pricing/calculate?${params.toString()}`);
+    const res = await fetch(`${API_BASE}/api/v1/pricing/calculate/vehicle/${selectedVehicle.value.id}?${params.toString()}`);
+    if (!res.ok) return; // silently fail for price calculation
     priceBreakdown.value = await res.json();
   }
 
@@ -219,8 +235,8 @@ export const useBookingStore = defineStore('booking', () => {
       customerId,
       pickupLocationId: Number(bookingDetails.value.pickupLocation),
       dropoffLocationId: Number(bookingDetails.value.dropoffLocation),
-      pickupDate: bookingDetails.value.date,
-      dropoffDate: bookingDetails.value.date, // TODO: добавить отдельное поле dropoffDate
+      pickupDate: bookingDetails.value.pickupDate,
+      dropoffDate: bookingDetails.value.dropoffDate,
       paymentMethod: paymentMethod.value === 'online' ? 'ONLINE' : 'ON_DELIVERY',
       addOns,
       currency: 'USD',
@@ -230,40 +246,60 @@ export const useBookingStore = defineStore('booking', () => {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
     });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.message || 'Failed to create booking');
+    }
     return await res.json();
   }
 
   async function initiatePayment(bookingId: number) {
+    if (!bookingId) throw new Error('Booking ID is required for payment');
     const res = await fetch(`${API_BASE}/api/v1/payments/initiate/${bookingId}`, { method: 'POST' });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.message || 'Failed to initiate payment');
+    }
     return await res.json();
   }
 
   async function processPayment(bookingId: number, transactionId: string) {
+    if (!bookingId) throw new Error('Booking ID is required for payment processing');
     const res = await fetch(`${API_BASE}/api/v1/payments/process`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ bookingId, transactionId, success: true }),
     });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.message || 'Failed to process payment');
+    }
     return await res.json();
   }
 
   async function confirmBooking() {
     submitting.value = true;
     try {
-      // 1. Создать клиента
+      // 1. Создать клиента (или получить существующего)
       const customer = await createCustomer();
+      if (!customer?.id) throw new Error('Failed to get customer ID');
+
       // 2. Пересчитать стоимость
       await calculatePrice();
+
       // 3. Создать бронирование
       const booking = await createBooking(customer.id);
+      if (!booking?.id) throw new Error('Failed to get booking ID');
+
       // 4. Оплата (если online)
       if (paymentMethod.value === 'online') {
         await initiatePayment(booking.id);
-        await processPayment(booking.id, 'txn_demo'); // transactionId должен быть реальным
+        await processPayment(booking.id, 'txn_demo');
       }
       submitted.value = true;
-    } catch (e) {
-      throw new Error('Booking failed');
+    } catch (e: any) {
+      console.error('Booking failed:', e?.message || e);
+      throw new Error(e?.message || 'Booking failed');
     } finally {
       submitting.value = false;
     }
@@ -271,7 +307,7 @@ export const useBookingStore = defineStore('booking', () => {
 
   function reset() {
     selectedVehicle.value = null;
-    bookingDetails.value = { pickupLocation: '', dropoffLocation: '', date: null, time: null };
+    bookingDetails.value = { pickupLocation: null, dropoffLocation: null, pickupDate: null, pickupTime: null, dropoffDate: null, dropoffTime: null };
     personalInfo.value = { fullName: '', email: '', phone: '' };
     addons.value.forEach((a: AddonOption) => (a.selected = false));
     paymentMethod.value = 'online';

@@ -67,6 +67,7 @@
               type="number"
               hide-details
               placeholder="2020"
+              persistent-placeholder
             />
           </v-col>
           <v-col cols="6">
@@ -79,6 +80,7 @@
               type="number"
               hide-details
               placeholder="2024"
+              persistent-placeholder
             />
           </v-col>
         </v-row>

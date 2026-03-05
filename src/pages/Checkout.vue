@@ -59,49 +59,101 @@
             <v-card-text class="pa-5 pt-0">
               <v-row dense>
                 <v-col cols="12" sm="6">
-                  <v-text-field
+                  <v-autocomplete
                     v-model="bookingStore.bookingDetails.pickupLocation"
+                    :items="bookingStore.locations"
+                    item-title="name"
+                    item-value="id"
                     label="Pick-up Location"
                     prepend-inner-icon="mdi-map-marker"
                     variant="outlined"
                     density="comfortable"
                     rounded="lg"
-                    :rules="[rules.required]"
-                    placeholder="City or Airport"
-                  />
+                    :rules="[rules.requiredSelect]"
+                    placeholder="Search location..."
+                    persistent-placeholder
+                    no-data-text="No locations found"
+                    clearable
+                  >
+                    <template #item="{ item, props }">
+                      <v-list-item v-bind="props">
+                        <template #subtitle>{{ item.raw.city }}, {{ item.raw.country }}</template>
+                      </v-list-item>
+                    </template>
+                  </v-autocomplete>
                 </v-col>
                 <v-col cols="12" sm="6">
-                  <v-text-field
+                  <v-autocomplete
                     v-model="bookingStore.bookingDetails.dropoffLocation"
+                    :items="bookingStore.locations"
+                    item-title="name"
+                    item-value="id"
                     label="Drop-off Location"
                     prepend-inner-icon="mdi-map-marker-check"
                     variant="outlined"
                     density="comfortable"
                     rounded="lg"
-                    :rules="[rules.required]"
-                    placeholder="City or Airport"
-                  />
+                    :rules="[rules.requiredSelect]"
+                    placeholder="Search location..."
+                    persistent-placeholder
+                    no-data-text="No locations found"
+                    clearable
+                  >
+                    <template #item="{ item, props }">
+                      <v-list-item v-bind="props">
+                        <template #subtitle>{{ item.raw.city }}, {{ item.raw.country }}</template>
+                      </v-list-item>
+                    </template>
+                  </v-autocomplete>
                 </v-col>
                 <v-col cols="12" sm="6">
                   <v-text-field
-                    v-model="bookingStore.bookingDetails.date"
-                    label="Date"
-                    prepend-inner-icon="mdi-calendar"
+                    v-model="bookingStore.bookingDetails.pickupDate"
+                    label="Pick-up Date"
+                    prepend-inner-icon="mdi-calendar-arrow-right"
                     variant="outlined"
                     density="comfortable"
                     rounded="lg"
                     type="date"
+                    :rules="[rules.required]"
+                    persistent-placeholder
                   />
                 </v-col>
                 <v-col cols="12" sm="6">
                   <v-text-field
-                    v-model="bookingStore.bookingDetails.time"
-                    label="Time"
+                    v-model="bookingStore.bookingDetails.pickupTime"
+                    label="Pick-up Time"
                     prepend-inner-icon="mdi-clock-outline"
                     variant="outlined"
                     density="comfortable"
                     rounded="lg"
                     type="time"
+                    persistent-placeholder
+                  />
+                </v-col>
+                <v-col cols="12" sm="6">
+                  <v-text-field
+                    v-model="bookingStore.bookingDetails.dropoffDate"
+                    label="Drop-off Date"
+                    prepend-inner-icon="mdi-calendar-arrow-left"
+                    variant="outlined"
+                    density="comfortable"
+                    rounded="lg"
+                    type="date"
+                    :rules="[rules.required]"
+                    persistent-placeholder
+                  />
+                </v-col>
+                <v-col cols="12" sm="6">
+                  <v-text-field
+                    v-model="bookingStore.bookingDetails.dropoffTime"
+                    label="Drop-off Time"
+                    prepend-inner-icon="mdi-clock-outline"
+                    variant="outlined"
+                    density="comfortable"
+                    rounded="lg"
+                    type="time"
+                    persistent-placeholder
                   />
                 </v-col>
               </v-row>
@@ -128,6 +180,7 @@
                     rounded="lg"
                     :rules="[rules.required, rules.minLength(2)]"
                     placeholder="John Doe"
+                    persistent-placeholder
                   />
                 </v-col>
                 <v-col cols="12" sm="6">
@@ -141,6 +194,7 @@
                     :rules="[rules.required, rules.email]"
                     placeholder="john@example.com"
                     type="email"
+                    persistent-placeholder
                   />
                 </v-col>
                 <v-col cols="12" sm="6">
@@ -153,6 +207,7 @@
                     rounded="lg"
                     :rules="[rules.required, rules.phone]"
                     placeholder="+1 (555) 123-4567"
+                    persistent-placeholder
                   />
                 </v-col>
               </v-row>
@@ -277,12 +332,26 @@
                       {{ bookingStore.selectedVehicle!.brand }} {{ bookingStore.selectedVehicle!.model }}
                     </h4>
                     <div class="text-body-2 text-primary font-weight-bold">
-                      ${{ bookingStore.selectedVehicle!.pricePerDay }}/day
+                      <template v-if="bookingStore.priceBreakdown">
+                        ${{ bookingStore.priceBreakdown.pricePerDay }}/day
+                      </template>
+                      <template v-else>
+                        from ${{ bookingStore.selectedVehicle!.minPricePerDay || bookingStore.selectedVehicle!.pricePerDay }}/day
+                      </template>
                     </div>
                     <div class="text-caption text-medium-emphasis">
                       {{ bookingStore.rentalDays }} day(s) •
-                      {{ bookingStore.bookingDetails.pickupLocation || 'Location TBD' }}
+                      {{ pickupLocationName }}
                     </div>
+                    <v-chip
+                      v-if="bookingStore.priceBreakdown?.tierName"
+                      size="x-small"
+                      color="primary"
+                      variant="tonal"
+                      class="mt-1"
+                    >
+                      {{ bookingStore.priceBreakdown.tierName }}
+                    </v-chip>
                   </div>
                 </div>
 
@@ -293,7 +362,7 @@
 
                 <div class="d-flex justify-space-between mb-2">
                   <span class="text-body-2 text-medium-emphasis">
-                    Rental Rate ({{ bookingStore.rentalDays }} × ${{ bookingStore.selectedVehicle!.pricePerDay }})
+                    Rental Rate ({{ bookingStore.rentalDays }} × ${{ bookingStore.priceBreakdown ? bookingStore.priceBreakdown.pricePerDay : bookingStore.selectedVehicle!.pricePerDay }})
                   </span>
                   <span class="text-body-2 font-weight-medium">${{ bookingStore.rentalRate }}</span>
                 </div>
@@ -312,7 +381,7 @@
                 </div>
 
                 <div class="d-flex justify-space-between mb-2">
-                  <span class="text-body-2 text-medium-emphasis">Service Fee (5%)</span>
+                  <span class="text-body-2 text-medium-emphasis">Service Fee (10%)</span>
                   <span class="text-body-2 font-weight-medium">${{ bookingStore.serviceFee }}</span>
                 </div>
 
@@ -323,14 +392,20 @@
                   <span class="text-h5 font-weight-bold text-primary">${{ bookingStore.totalAmount }}</span>
                 </div>
 
+                <!-- Prepayment info -->
+                <div v-if="bookingStore.priceBreakdown?.prepaymentAmount" class="d-flex justify-space-between align-center mb-2">
+                  <span class="text-body-2 text-medium-emphasis">Prepayment (15%)</span>
+                  <span class="text-body-2 font-weight-bold text-success">${{ bookingStore.priceBreakdown.prepaymentAmount }}</span>
+                </div>
+
                 <v-chip
                   size="small"
-                  color="success"
+                  color="info"
                   variant="tonal"
                   class="mb-4"
-                  prepend-icon="mdi-check-circle"
+                  prepend-icon="mdi-information"
                 >
-                  Includes VAT
+                  Booking confirmed after 15% prepayment
                 </v-chip>
 
                 <!-- Validation messages -->
@@ -381,30 +456,55 @@
 </template>
 
 <script setup lang="ts">
-import { onBeforeUnmount, computed } from 'vue';
+import { onBeforeUnmount, onMounted, computed, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useBookingStore } from '@/stores/booking';
 import type { AddonOption } from '@/stores/booking';
-import { useVehicleStore } from '@/stores/vehicles';
 import LuxeFooter from '@/components/luxedrive/LuxeFooter.vue';
 
 const router = useRouter();
 const route = useRoute();
 const bookingStore = useBookingStore();
-const vehicleStore = useVehicleStore();
 
 const selectedAddons = computed(() => bookingStore.addons.filter((a: AddonOption) => a.selected));
 
-// If navigated directly, try to load vehicle by ID
-if (!bookingStore.selectedVehicle && route.params.id) {
-  const vehicle = vehicleStore.getVehicleById(Number(route.params.id));
-  if (vehicle) {
-    bookingStore.setVehicle(vehicle);
+const pickupLocationName = computed(() => {
+  const id = bookingStore.bookingDetails.pickupLocation;
+  if (!id) return 'Location TBD';
+  const loc = bookingStore.locations.find((l: any) => l.id === id);
+  return loc ? loc.name : 'Location TBD';
+});
+
+// If navigated directly, load vehicle by ID from API
+onMounted(async () => {
+  if (!bookingStore.selectedVehicle && route.params.id) {
+    await bookingStore.fetchVehicleById(Number(route.params.id));
   }
-}
+  await bookingStore.fetchLocations();
+  // Initial price calculation if dates are set
+  if (bookingStore.bookingDetails.pickupDate && bookingStore.bookingDetails.dropoffDate) {
+    await bookingStore.calculatePrice();
+  }
+});
+
+// Auto-recalculate price when dates or addons change
+watch(
+  () => [
+    bookingStore.bookingDetails.pickupDate,
+    bookingStore.bookingDetails.dropoffDate,
+    bookingStore.addons.filter((a: AddonOption) => a.selected).length,
+  ],
+  async () => {
+    if (bookingStore.selectedVehicle && bookingStore.bookingDetails.pickupDate && bookingStore.bookingDetails.dropoffDate) {
+      await bookingStore.calculatePrice();
+    }
+  },
+  { deep: true }
+);
 
 const rules = {
   required: (v: string) => !!v?.trim() || 'This field is required',
+  requiredSelect: (v: any) => v !== null && v !== undefined || 'Please select a location',
   email: (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v) || 'Invalid email format',
   phone: (v: string) => v?.trim().length >= 7 || 'Phone number must be at least 7 characters',
   minLength: (min: number) => (v: string) => v?.trim().length >= min || `Minimum ${min} characters`,
