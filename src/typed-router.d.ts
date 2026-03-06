@@ -21,10 +21,11 @@ declare module 'vue-router/auto-routes' {
     '/Credentials/Permissions': RouteRecordInfo<'/Credentials/Permissions', '/Credentials/Permissions', Record<never, never>, Record<never, never>>,
     '/Credentials/Roles': RouteRecordInfo<'/Credentials/Roles', '/Credentials/Roles', Record<never, never>, Record<never, never>>,
     '/Credentials/Users': RouteRecordInfo<'/Credentials/Users', '/Credentials/Users', Record<never, never>, Record<never, never>>,
-    '/Home': RouteRecordInfo<'/Home', '/Home', Record<never, never>, Record<never, never>>,
+    '/BookingsAdmin': RouteRecordInfo<'/BookingsAdmin', '/BookingsAdmin', Record<never, never>, Record<never, never>>,
     '/Login': RouteRecordInfo<'/Login', '/Login', Record<never, never>, Record<never, never>>,
     '/NotFound': RouteRecordInfo<'/NotFound', '/NotFound', Record<never, never>, Record<never, never>>,
     '/Profile': RouteRecordInfo<'/Profile', '/Profile', Record<never, never>, Record<never, never>>,
-    '/Role': RouteRecordInfo<'/Role', '/Role', Record<never, never>, Record<never, never>>,
+    '/Vehicles': RouteRecordInfo<'/Vehicles', '/Vehicles', Record<never, never>, Record<never, never>>,
+    '/Checkout': RouteRecordInfo<'/Checkout', '/Checkout', Record<never, never>, Record<never, never>>,
   }
 }

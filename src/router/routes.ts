@@ -3,20 +3,22 @@ import type { RouteRecordRaw } from 'vue-router';
 const staticRoutes: RouteRecordRaw[] = [
   {
     path: '/',
-    name: 'Home',
-    component: () => import('@/pages/Home.vue'),
-    meta: { public: true },
+    redirect: '/vehicles',
+  },
+  {
+    path: '/home',
+    redirect: '/bookings',
   },
   {
     path: '/vehicles',
     name: 'Vehicles',
-    component: () => import('@/pages/Vehicles.vue'),
+    component: () => import('@/pages/rental/Vehicles.vue'),
     meta: { public: true },
   },
   {
     path: '/checkout/:id?',
     name: 'Checkout',
-    component: () => import('@/pages/Checkout.vue'),
+    component: () => import('@/pages/rental/Checkout.vue'),
     meta: { public: true },
   },
   {
@@ -29,6 +31,16 @@ const staticRoutes: RouteRecordRaw[] = [
     path: '/profile',
     name: 'Profile',
     component: () => import('@/pages/Profile.vue'),
+  },
+  {
+    path: '/bookings',
+    name: 'BookingsAdmin',
+    component: () => import('@/pages/BookingsAdmin.vue'),
+  },
+  {
+    path: '/vehicles-admin',
+    name: 'VehiclesAdmin',
+    component: () => import('@/pages/VehiclesAdmin.vue'),
   },
   {
     path: '/auth',
@@ -44,6 +56,26 @@ const staticRoutes: RouteRecordRaw[] = [
     path: '/permission',
     name: 'Permission',
     component: () => import('@/pages/Credentials/Permissions.vue'),
+  },
+  {
+    path: '/services-admin',
+    name: 'ServicesAdmin',
+    component: () => import('@/pages/ServicesAdmin.vue'),
+  },
+  {
+    path: '/reports',
+    name: 'Reports',
+    component: () => import('@/pages/Reports.vue'),
+  },
+  {
+    path: '/vehicle-attrs',
+    name: 'VehicleAttrsAdmin',
+    component: () => import('@/pages/VehicleAttrsAdmin.vue'),
+  },
+  {
+    path: '/bookings-calendar',
+    name: 'BookingsCalendar',
+    component: () => import('@/pages/BookingsCalendar.vue'),
   },
   {
     path: '/:catchAll(.*)',

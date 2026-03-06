@@ -1,5 +1,5 @@
 <template>
-  <footer class="luxe-footer mt-12">
+  <footer class="rental-footer mt-12">
     <v-container>
       <v-row>
         <!-- Fleet Options -->
@@ -71,10 +71,10 @@
       <div class="d-flex align-center justify-space-between flex-wrap ga-4">
         <div class="d-flex align-center ga-2">
           <v-icon color="primary" size="28">mdi-car-sports</v-icon>
-          <span class="text-h6 font-weight-bold text-white">LuxeDrive</span>
+          <span class="text-h6 font-weight-bold text-white">Car Rental</span>
         </div>
         <span class="text-body-2 text-grey-lighten-1">
-          © {{ currentYear }} LuxeDrive. All rights reserved.
+          © {{ currentYear }} Car Rental. All rights reserved.
         </span>
         <div class="d-flex ga-1">
           <v-btn icon="mdi-instagram" variant="text" size="small" color="grey-lighten-1" />
@@ -102,7 +102,7 @@ function subscribe() {
 </script>
 
 <style scoped>
-.luxe-footer {
+.rental-footer {
   background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
   padding: 48px 0 24px;
 }

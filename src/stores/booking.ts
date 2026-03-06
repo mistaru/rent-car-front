@@ -15,6 +15,7 @@ export interface PersonalInfo {
   fullName: string;
   email: string;
   phone: string;
+  additionalInfo: string;
 }
 
 export interface AddonOption {
@@ -24,6 +25,7 @@ export interface AddonOption {
   icon: string;
   pricePerDay: number;
   selected: boolean;
+  category: string;
 }
 
 export type PaymentMethod = 'online' | 'delivery';
@@ -67,40 +69,39 @@ export const useBookingStore = defineStore('booking', () => {
     fullName: '',
     email: '',
     phone: '',
+    additionalInfo: '',
   });
 
-  const addons = ref<AddonOption[]>([
-    {
-      id: 'insurance',
-      title: 'Full Insurance',
-      description: 'Comprehensive coverage for your peace of mind',
-      icon: 'mdi-shield-check',
-      pricePerDay: 25,
-      selected: false,
-    },
-    {
-      id: 'child-seat',
-      title: 'Child Safety Seat',
-      description: 'ISOFIX compatible child seat for ages 1–6',
-      icon: 'mdi-car-child-seat',
-      pricePerDay: 10,
-      selected: false,
-    },
-    {
-      id: 'gps',
-      title: 'GPS Navigator',
-      description: 'Premium GPS with real-time traffic updates',
-      icon: 'mdi-crosshairs-gps',
-      pricePerDay: 12,
-      selected: false,
-    },
-  ]);
+  const addons = ref<AddonOption[]>([]);
 
   const paymentMethod = ref<PaymentMethod>('online');
   const submitting = ref(false);
   const submitted = ref(false);
   const locations = ref<LocationDto[]>([]);
   const priceBreakdown = ref<PriceBreakdown | null>(null);
+
+  /** Загружает доп. услуги из API (service_options) */
+  async function fetchServiceOptions() {
+    try {
+      const res = await fetch(`${API_BASE}/api/v1/service-options/active`);
+      if (!res.ok) return;
+      const data: Array<{
+        id: number; code: string; name: string; description: string;
+        category: string; icon: string; pricePerDay: number;
+      }> = await res.json();
+      addons.value = data.map(opt => ({
+        id: opt.code,
+        title: opt.name,
+        description: opt.description || '',
+        icon: opt.icon || 'mdi-plus-box',
+        pricePerDay: opt.pricePerDay,
+        selected: false,
+        category: opt.category || 'OTHER',
+      }));
+    } catch (e) {
+      console.error('fetchServiceOptions error:', e);
+    }
+  }
 
   const rentalDays = computed(() => {
     const { pickupDate, dropoffDate } = bookingDetails.value;
@@ -123,6 +124,26 @@ export const useBookingStore = defineStore('booking', () => {
     return addons.value
       .filter((a: AddonOption) => a.selected)
       .reduce((sum: number, a: AddonOption) => sum + a.pricePerDay * rentalDays.value, 0);
+  });
+
+  /** Доп. услуги, сгруппированные по категориям */
+  const addonsByCategory = computed(() => {
+    const categoryMeta: Record<string, { label: string; icon: string; order: number }> = {
+      EQUIPMENT: { label: 'Camping Equipment', icon: 'mdi-tent', order: 1 },
+      DOCUMENTS: { label: 'Border Documents', icon: 'mdi-file-document-outline', order: 2 },
+      DELIVERY:  { label: 'Pick-up / Delivery', icon: 'mdi-truck-delivery-outline', order: 3 },
+      OTHER:     { label: 'Other Services', icon: 'mdi-dots-horizontal', order: 4 },
+    };
+    const grouped: Record<string, { label: string; icon: string; order: number; items: AddonOption[] }> = {};
+    for (const addon of addons.value) {
+      const cat = addon.category || 'OTHER';
+      if (!grouped[cat]) {
+        const meta = categoryMeta[cat] || categoryMeta['OTHER'];
+        grouped[cat] = { ...meta, items: [] };
+      }
+      grouped[cat].items.push(addon);
+    }
+    return Object.values(grouped).sort((a, b) => a.order - b.order);
   });
 
   const serviceFee = computed(() => {
@@ -163,8 +184,16 @@ export const useBookingStore = defineStore('booking', () => {
 
   function toggleAddon(id: string) {
     const addon = addons.value.find((a: AddonOption) => a.id === id);
-    if (addon) {
-      addon.selected = !addon.selected;
+    if (!addon) return;
+
+    const wasSelected = addon.selected;
+    addon.selected = !addon.selected;
+
+    // DELIVERY — взаимоисключающие: при выборе одной delivery снимаются остальные
+    if (addon.selected && addon.category === 'DELIVERY') {
+      addons.value
+        .filter((a: AddonOption) => a.category === 'DELIVERY' && a.id !== id)
+        .forEach((a: AddonOption) => (a.selected = false));
     }
   }
 
@@ -206,12 +235,8 @@ export const useBookingStore = defineStore('booking', () => {
   async function calculatePrice() {
     if (!selectedVehicle.value) return;
     const days = rentalDays.value;
-    const addOns = addons.value.filter(a => a.selected).map(a => {
-      if (a.id === 'insurance') return 'INSURANCE_PREMIUM';
-      if (a.id === 'child-seat') return 'CHILD_SEAT';
-      if (a.id === 'gps') return 'GPS';
-      return '';
-    }).filter(Boolean);
+    // addon.id is now the service option CODE from the API (e.g. 'ROOF_TENT')
+    const addOns = addons.value.filter(a => a.selected).map(a => a.id);
     const params = new URLSearchParams({
       days: String(days),
       currency: 'USD',
@@ -224,12 +249,8 @@ export const useBookingStore = defineStore('booking', () => {
 
   async function createBooking(customerId: number) {
     if (!selectedVehicle.value) throw new Error('No vehicle selected');
-    const addOns = addons.value.filter(a => a.selected).map(a => {
-      if (a.id === 'insurance') return 'INSURANCE_PREMIUM';
-      if (a.id === 'child-seat') return 'CHILD_SEAT';
-      if (a.id === 'gps') return 'GPS';
-      return '';
-    }).filter(Boolean);
+    // addon.id is now the service option CODE from the API
+    const addOns = addons.value.filter(a => a.selected).map(a => a.id);
     const body = {
       vehicleId: selectedVehicle.value.id,
       customerId,
@@ -308,7 +329,7 @@ export const useBookingStore = defineStore('booking', () => {
   function reset() {
     selectedVehicle.value = null;
     bookingDetails.value = { pickupLocation: null, dropoffLocation: null, pickupDate: null, pickupTime: null, dropoffDate: null, dropoffTime: null };
-    personalInfo.value = { fullName: '', email: '', phone: '' };
+    personalInfo.value = { fullName: '', email: '', phone: '', additionalInfo: '' };
     addons.value.forEach((a: AddonOption) => (a.selected = false));
     paymentMethod.value = 'online';
     submitting.value = false;
@@ -320,6 +341,7 @@ export const useBookingStore = defineStore('booking', () => {
     bookingDetails,
     personalInfo,
     addons,
+    addonsByCategory,
     paymentMethod,
     submitting,
     submitted,
@@ -340,6 +362,7 @@ export const useBookingStore = defineStore('booking', () => {
     locations,
     fetchLocations,
     fetchVehicleById,
+    fetchServiceOptions,
     priceBreakdown,
     calculatePrice,
   };

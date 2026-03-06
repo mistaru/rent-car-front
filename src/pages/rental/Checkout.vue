@@ -210,6 +210,21 @@
                     persistent-placeholder
                   />
                 </v-col>
+                <v-col cols="12">
+                  <v-textarea
+                    v-model="bookingStore.personalInfo.additionalInfo"
+                    label="Additional Info"
+                    prepend-inner-icon="mdi-text-box-outline"
+                    variant="outlined"
+                    density="comfortable"
+                    rounded="lg"
+                    placeholder="Special requests, notes, etc."
+                    persistent-placeholder
+                    rows="3"
+                    auto-grow
+                    hide-details
+                  />
+                </v-col>
               </v-row>
             </v-card-text>
           </v-card>
@@ -223,40 +238,52 @@
               <span class="text-subtitle-1 font-weight-bold">Additional Options</span>
             </v-card-title>
             <v-card-text class="pa-5 pt-0">
-              <v-row dense>
-                <v-col
-                  v-for="addon in bookingStore.addons"
-                  :key="addon.id"
-                  cols="12"
-                  sm="4"
-                >
-                  <v-card
-                    :class="['addon-card', { 'addon-card--selected': addon.selected }]"
-                    elevation="0"
-                    rounded="xl"
-                    @click="bookingStore.toggleAddon(addon.id)"
+              <div
+                v-for="(group, gi) in bookingStore.addonsByCategory"
+                :key="gi"
+                class="mb-5"
+              >
+                <div class="d-flex align-center ga-2 mb-3">
+                  <v-icon size="20" color="primary">{{ group.icon }}</v-icon>
+                  <span class="text-subtitle-2 font-weight-bold text-medium-emphasis text-uppercase ls-wide">{{ group.label }}</span>
+                </div>
+                <v-row dense>
+                  <v-col
+                    v-for="addon in group.items"
+                    :key="addon.id"
+                    cols="12"
+                    sm="6"
+                    md="4"
                   >
-                    <v-card-text class="pa-4 text-center">
-                      <v-icon
-                        :color="addon.selected ? 'primary' : 'grey'"
-                        size="36"
-                        class="mb-2"
-                      >
-                        {{ addon.icon }}
-                      </v-icon>
-                      <h4 class="text-subtitle-2 font-weight-bold mb-1">{{ addon.title }}</h4>
-                      <p class="text-caption text-medium-emphasis mb-2">{{ addon.description }}</p>
-                      <v-chip
-                        size="small"
-                        :color="addon.selected ? 'primary' : 'grey-lighten-1'"
-                        :variant="addon.selected ? 'elevated' : 'tonal'"
-                      >
-                        +${{ addon.pricePerDay }}/day
-                      </v-chip>
-                    </v-card-text>
-                  </v-card>
-                </v-col>
-              </v-row>
+                    <v-card
+                      :class="['addon-card', { 'addon-card--selected': addon.selected }]"
+                      elevation="0"
+                      rounded="xl"
+                      @click="bookingStore.toggleAddon(addon.id)"
+                    >
+                      <v-card-text class="pa-4 text-center">
+                        <v-icon
+                          :color="addon.selected ? 'primary' : 'grey'"
+                          size="36"
+                          class="mb-2"
+                        >
+                          {{ addon.icon }}
+                        </v-icon>
+                        <h4 class="text-subtitle-2 font-weight-bold mb-1">{{ addon.title }}</h4>
+                        <p class="text-caption text-medium-emphasis mb-2">{{ addon.description }}</p>
+                        <v-chip
+                          size="small"
+                          :color="addon.selected ? 'primary' : 'grey-lighten-1'"
+                          :variant="addon.selected ? 'elevated' : 'tonal'"
+                        >
+                          {{ addon.pricePerDay > 0 ? `+$${addon.pricePerDay}/day` : 'Free' }}
+                        </v-chip>
+                      </v-card-text>
+                    </v-card>
+                  </v-col>
+                </v-row>
+                <v-divider v-if="gi < bookingStore.addonsByCategory.length - 1" class="mt-4" />
+              </div>
             </v-card-text>
           </v-card>
 
@@ -451,7 +478,7 @@
       </v-row>
     </v-container>
 
-    <LuxeFooter />
+    <RentalFooter />
   </div>
 </template>
 
@@ -460,7 +487,7 @@ import { onBeforeUnmount, onMounted, computed, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useBookingStore } from '@/stores/booking';
 import type { AddonOption } from '@/stores/booking';
-import LuxeFooter from '@/components/luxedrive/LuxeFooter.vue';
+import RentalFooter from '@/components/rental/RentalFooter.vue';
 
 const router = useRouter();
 const route = useRoute();
@@ -480,7 +507,10 @@ onMounted(async () => {
   if (!bookingStore.selectedVehicle && route.params.id) {
     await bookingStore.fetchVehicleById(Number(route.params.id));
   }
-  await bookingStore.fetchLocations();
+  await Promise.all([
+    bookingStore.fetchLocations(),
+    bookingStore.fetchServiceOptions(),
+  ]);
   // Initial price calculation if dates are set
   if (bookingStore.bookingDetails.pickupDate && bookingStore.bookingDetails.dropoffDate) {
     await bookingStore.calculatePrice();
@@ -587,5 +617,9 @@ onBeforeUnmount(() => {
   text-transform: none;
   font-weight: 700;
   letter-spacing: 0.5px;
+}
+
+.ls-wide {
+  letter-spacing: 0.08em;
 }
 </style>

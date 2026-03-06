@@ -4,6 +4,31 @@
       <v-row align="center" dense>
         <v-col cols="12" sm="6" md="3">
           <v-autocomplete
+            v-model="selectedVehicleId"
+            :items="vehicleStore.vehicles"
+            :item-title="vehicleLabel"
+            item-value="id"
+            label="Vehicle"
+            prepend-inner-icon="mdi-car"
+            variant="outlined"
+            density="comfortable"
+            rounded="lg"
+            hide-details
+            placeholder="Search vehicle..."
+            persistent-placeholder
+            no-data-text="No vehicles found"
+            clearable
+            @update:model-value="onVehicleSelected"
+          >
+            <template #item="{ item, props }">
+              <v-list-item v-bind="props">
+                <template #subtitle>{{ item.raw.carClass }} · {{ item.raw.fuelType }} · from ${{ item.raw.minPricePerDay || item.raw.pricePerDay }}/day</template>
+              </v-list-item>
+            </template>
+          </v-autocomplete>
+        </v-col>
+        <v-col cols="12" sm="6" md="2">
+          <v-autocomplete
             v-model="vehicleStore.searchParams.pickupLocation"
             :items="vehicleStore.locations"
             item-title="name"
@@ -71,10 +96,25 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted } from 'vue';
+import { ref, onMounted } from 'vue';
+import { useRouter } from 'vue-router';
 import { useVehicleStore } from '@/stores/vehicles';
+import type { Vehicle } from '@/stores/vehicles';
 
 const vehicleStore = useVehicleStore();
+const router = useRouter();
+
+const selectedVehicleId = ref<number | null>(null);
+
+function vehicleLabel(item: Vehicle) {
+  return `${item.brand} ${item.model}`;
+}
+
+function onVehicleSelected(id: number | null) {
+  if (id) {
+    router.push({ name: 'Checkout', params: { id } });
+  }
+}
 
 onMounted(() => {
   if (vehicleStore.locations.length === 0) {

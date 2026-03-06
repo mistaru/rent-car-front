@@ -18,7 +18,7 @@ const handleLogin = () => {
       .then((data) => {
         if (data) {
           store.fetchMenu();
-          router.push('/');
+          router.push('/bookings');
         }
       });
   }

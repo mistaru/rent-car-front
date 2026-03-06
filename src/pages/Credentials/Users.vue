@@ -168,7 +168,7 @@ onMounted(getUsers);
 </script>
 
 <template>
-  <v-container>
+  <v-container fluid class="admin-page pa-6">
     <ModalDialog
       v-model:dialog="userDialog"
       :title="isEditing ? 'Редактировать пользователя' : 'Создать пользователя'"
@@ -181,6 +181,10 @@ onMounted(getUsers);
           v-model="newUser.name"
           :rules="Rules.login"
           label="Имя пользователя"
+          variant="outlined"
+          rounded="lg"
+          density="comfortable"
+          class="mb-4"
         />
         <v-text-field
           v-model="newUser.password"
@@ -188,6 +192,10 @@ onMounted(getUsers);
           :type="showPassword ? 'text' : 'password'"
           label="Пароль"
           autocomplete="on"
+          variant="outlined"
+          rounded="lg"
+          density="comfortable"
+          class="mb-4"
         >
           <template #append-inner>
             <v-icon @click="showPassword = !showPassword">
@@ -202,6 +210,9 @@ onMounted(getUsers);
           item-title="name"
           item-value="id"
           multiple
+          variant="outlined"
+          rounded="lg"
+          density="comfortable"
         />
       </form>
     </ModalDialog>
@@ -220,77 +231,116 @@ onMounted(getUsers);
           item-title="username"
           item-value="id"
           label="Пользователь"
+          variant="outlined"
+          rounded="lg"
+          density="comfortable"
         />
       </form>
     </ModalDialog>
 
-    <v-card>
-      <v-card-title class="d-flex align-center justify-space-between">
-        Список пользователей
-        <v-btn
-          v-if="canCreate"
-          color="primary"
-          @click="openCreateUserModal"
-        >
-          Создать пользователя
-        </v-btn>
-      </v-card-title>
+    <!-- Page header -->
+    <div class="d-flex align-center justify-space-between mb-6">
+      <div class="d-flex align-center ga-3">
+        <v-avatar size="40" color="primary" variant="tonal" rounded="lg">
+          <v-icon size="22">mdi-account-group-outline</v-icon>
+        </v-avatar>
+        <div>
+          <h1 class="text-h5 font-weight-bold">Пользователи</h1>
+          <p class="text-caption text-medium-emphasis">Управление учётными записями</p>
+        </div>
+      </div>
+      <v-btn
+        v-if="canCreate"
+        color="primary"
+        variant="flat"
+        rounded="lg"
+        @click="openCreateUserModal"
+      >
+        <v-icon start>mdi-plus</v-icon>
+        Создать пользователя
+      </v-btn>
+    </div>
 
+    <v-card elevation="0" rounded="xl" class="admin-card">
       <v-data-table
         :headers="headers"
         :items="users"
         :loading="loading"
         item-value="id"
+        hover
+        class="admin-table"
       >
         <template #item.roles="{ item }">
-          <span v-if="item?.roles?.length">
-            {{ item?.roles?.map(role => role.name).join(', ') }}
-          </span>
+          <div class="d-flex ga-1 flex-wrap">
+            <v-chip
+              v-for="role in (item?.roles || [])"
+              :key="role.id"
+              size="small"
+              variant="tonal"
+              color="primary"
+            >
+              {{ role.name }}
+            </v-chip>
+          </div>
         </template>
 
         <template #item.active="{ item }">
-          <v-icon
-            v-if="!item.blocked"
-            color="green"
+          <v-chip
+            :color="item.blocked ? 'error' : 'success'"
+            size="small"
+            variant="tonal"
+            :prepend-icon="item.blocked ? 'mdi-lock-outline' : 'mdi-check-circle-outline'"
           >
-            mdi-check
-          </v-icon>
-          <v-icon
-            v-else
-            color="red"
-          >
-            mdi-close
-          </v-icon>
+            {{ item.blocked ? 'Заблокирован' : 'Активен' }}
+          </v-chip>
         </template>
 
         <template #item.actions="{ item }">
-          <v-btn
-            v-if="canDelete"
-            color="red"
-            size="small"
-            @click="confirmDeleteUser(item.id)"
-          >
-            Удалить
-          </v-btn>
-          <v-btn
-            v-if="canUpdate"
-            color="blue"
-            size="small"
-            class="ma-2"
-            @click="editUser(item.id)"
-          >
-            Редактировать
-          </v-btn>
-          <v-btn
-            v-if="canUpdate"
-            color="orange"
-            size="small"
-            @click="toggleBlockUser(item.id, !item.blocked)"
-          >
-            {{ item.blocked ? 'Разблокировать' : 'Заблокировать' }}
-          </v-btn>
+          <div class="d-flex ga-1">
+            <v-tooltip v-if="canUpdate" text="Редактировать" location="top">
+              <template #activator="{ props }">
+                <v-btn v-bind="props" icon variant="text" size="small" color="primary" @click="editUser(item.id)">
+                  <v-icon size="20">mdi-pencil-outline</v-icon>
+                </v-btn>
+              </template>
+            </v-tooltip>
+            <v-tooltip v-if="canUpdate" :text="item.blocked ? 'Разблокировать' : 'Заблокировать'" location="top">
+              <template #activator="{ props }">
+                <v-btn v-bind="props" icon variant="text" size="small" :color="item.blocked ? 'success' : 'warning'" @click="toggleBlockUser(item.id, !item.blocked)">
+                  <v-icon size="20">{{ item.blocked ? 'mdi-lock-open-outline' : 'mdi-lock-outline' }}</v-icon>
+                </v-btn>
+              </template>
+            </v-tooltip>
+            <v-tooltip v-if="canDelete" text="Удалить" location="top">
+              <template #activator="{ props }">
+                <v-btn v-bind="props" icon variant="text" size="small" color="error" @click="confirmDeleteUser(item.id)">
+                  <v-icon size="20">mdi-delete-outline</v-icon>
+                </v-btn>
+              </template>
+            </v-tooltip>
+          </div>
         </template>
       </v-data-table>
     </v-card>
   </v-container>
 </template>
+
+<style scoped>
+.admin-page {
+  background: #f8f7fc;
+  min-height: 100vh;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+.admin-card {
+  border: 1px solid rgba(0, 0, 0, 0.06);
+}
+.admin-table :deep(th) {
+  font-size: 0.75rem !important;
+  font-weight: 600 !important;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: rgba(0, 0, 0, 0.5) !important;
+}
+</style>
+

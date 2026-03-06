@@ -5,10 +5,10 @@
       <v-container>
         <div class="d-flex align-center ga-3 mb-2">
           <v-icon color="primary" size="36">mdi-car-sports</v-icon>
-          <h1 class="text-h4 font-weight-bold">LuxeDrive</h1>
+          <h1 class="text-h4 font-weight-bold">Car Rental</h1>
         </div>
         <p class="text-body-1 text-medium-emphasis">
-          Premium car rental — explore our exclusive fleet
+          Car rental — explore our exclusive fleet
         </p>
       </v-container>
     </div>
@@ -100,17 +100,17 @@
     </v-container>
 
     <!-- Footer -->
-    <LuxeFooter />
+    <RentalFooter />
   </div>
 </template>
 
 <script setup lang="ts">
 import { onMounted } from 'vue';
 import { useVehicleStore } from '@/stores/vehicles';
-import SearchBar from '@/components/luxedrive/SearchBar.vue';
-import FilterPanel from '@/components/luxedrive/FilterPanel.vue';
-import VehicleCard from '@/components/luxedrive/VehicleCard.vue';
-import LuxeFooter from '@/components/luxedrive/LuxeFooter.vue';
+import SearchBar from '@/components/rental/SearchBar.vue';
+import FilterPanel from '@/components/rental/FilterPanel.vue';
+import VehicleCard from '@/components/rental/VehicleCard.vue';
+import RentalFooter from '@/components/rental/RentalFooter.vue';
 
 const vehicleStore = useVehicleStore();
 

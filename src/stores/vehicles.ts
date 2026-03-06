@@ -5,7 +5,6 @@ export interface Vehicle {
   id: number;
   brand: string;
   model: string;
-  year: number;
   bodyType: string;
   drivetrain: 'AWD' | '2WD' | '4WD';
   fuelType: 'Gasoline' | 'Diesel' | 'Electric' | 'Hybrid';
@@ -31,8 +30,16 @@ export interface Filters {
   carClass: string;
   drivetrain: string;
   fuelType: string;
-  yearFrom: number | null;
-  yearTo: number | null;
+  [key: string]: string; // dynamic attribute filters
+}
+
+export interface DynamicFilter {
+  code: string;
+  name: string;
+  valueType: string;
+  filterType: string; // 'radio' | 'select' | 'checkbox' | 'none'
+  usedValues: string[];
+  possibleValues: string[];
 }
 
 export interface LocationItem {
@@ -70,12 +77,24 @@ export const useVehicleStore = defineStore('vehicles', () => {
     carClass: '',
     drivetrain: 'all',
     fuelType: 'all',
-    yearFrom: null,
-    yearTo: null,
   });
 
   // Для фильтров (можно получать из API, если появится)
   const carClasses = ref<string[]>([]);
+
+  // Динамические фильтры из API
+  const dynamicFilters = ref<DynamicFilter[]>([]);
+
+  async function fetchDynamicFilters() {
+    try {
+      const res = await fetch(`${API_BASE}/api/v1/vehicle-attributes/filters`);
+      if (res.ok) {
+        dynamicFilters.value = await res.json();
+      }
+    } catch (e) {
+      console.error('Failed to fetch dynamic filters', e);
+    }
+  }
 
   // Получение списка авто с фильтрами и пагинацией
   async function fetchVehicles() {
@@ -86,11 +105,12 @@ export const useVehicleStore = defineStore('vehicles', () => {
       if (filters.value.carClass) params.append('carClass', filters.value.carClass);
       if (filters.value.drivetrain && filters.value.drivetrain !== 'all') params.append('drivetrain', filters.value.drivetrain);
       if (filters.value.fuelType && filters.value.fuelType !== 'all') params.append('fuelType', filters.value.fuelType);
-      if (filters.value.yearFrom !== null) params.append('yearFrom', String(filters.value.yearFrom));
-      if (filters.value.yearTo !== null) params.append('yearTo', String(filters.value.yearTo));
-      // year только если явно используется
-      if (filters.value.yearFrom === null && filters.value.yearTo === null && filters.value.yearFrom !== undefined && filters.value.yearTo !== undefined && filters.value.yearFrom === filters.value.yearTo) {
-        params.append('year', String(filters.value.yearFrom));
+      // Send dynamic attribute filters as attr_CODE=value
+      for (const df of dynamicFilters.value) {
+        const val = filters.value[df.code];
+        if (val && val !== 'all' && val !== '') {
+          params.append(`attr_${df.code}`, val);
+        }
       }
       if (searchParams.value.pickupLocation !== null) params.append('locationId', String(searchParams.value.pickupLocation));
       if (searchParams.value.pickupDate) params.append('pickupDate', searchParams.value.pickupDate);
@@ -154,13 +174,16 @@ export const useVehicleStore = defineStore('vehicles', () => {
   }
 
   function resetFilters() {
-    filters.value = {
+    const reset: Filters = {
       carClass: '',
       drivetrain: 'all',
       fuelType: 'all',
-      yearFrom: null,
-      yearTo: null,
     };
+    // Clear dynamic attribute filters
+    for (const df of dynamicFilters.value) {
+      reset[df.code] = '';
+    }
+    filters.value = reset;
     page.value = 0;
     fetchVehicles();
   }
@@ -194,9 +217,11 @@ export const useVehicleStore = defineStore('vehicles', () => {
     filters,
     carClasses,
     locations,
+    dynamicFilters,
     fetchVehicles,
     fetchVehicleById,
     fetchLocations,
+    fetchDynamicFilters,
     nextPage,
     prevPage,
     setPage,

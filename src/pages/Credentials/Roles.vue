@@ -134,49 +134,83 @@ onMounted(() => {
 </script>
 
 <template>
-  <v-container fluid>
-    <v-btn
-      v-if="canCreate"
-      color="primary"
-      @click="openDialog()"
-    >
-      Создать новую роль
-    </v-btn>
+  <v-container fluid class="admin-page pa-6">
+    <!-- Page header -->
+    <div class="d-flex align-center justify-space-between mb-6">
+      <div class="d-flex align-center ga-3">
+        <v-avatar size="40" color="primary" variant="tonal" rounded="lg">
+          <v-icon size="22">mdi-shield-account-outline</v-icon>
+        </v-avatar>
+        <div>
+          <h1 class="text-h5 font-weight-bold">Роли</h1>
+          <p class="text-caption text-medium-emphasis">Управление ролями и правами доступа</p>
+        </div>
+      </div>
+      <v-btn
+        v-if="canCreate"
+        color="primary"
+        variant="flat"
+        rounded="lg"
+        @click="openDialog()"
+      >
+        <v-icon start>mdi-plus</v-icon>
+        Создать роль
+      </v-btn>
+    </div>
 
-    <v-data-table
-      :headers="headers"
-      :items="store.roles"
-      :loading="loading"
-      item-value="id"
-    >
-      <template #item.actions="{ item }">
-        <v-btn
-          v-if="canUpdate"
-          color="primary"
-          size="x-small"
-          icon="mdi-pencil"
-          @click="openDialog(item)"
-        />
-        <v-btn
-          v-if="canDelete"
-          color="error"
-          size="x-small"
-          icon="mdi-delete"
-          @click="deleteRole(item.id)"
-        />
-      </template>
-    </v-data-table>
+    <v-card elevation="0" rounded="xl" class="admin-card">
+      <v-data-table
+        :headers="headers"
+        :items="store.roles"
+        :loading="loading"
+        item-value="id"
+        hover
+        class="admin-table"
+      >
+        <template #item.actions="{ item }">
+          <div class="d-flex ga-1">
+            <v-tooltip v-if="canUpdate" text="Редактировать" location="top">
+              <template #activator="{ props }">
+                <v-btn v-bind="props" icon variant="text" size="small" color="primary" @click="openDialog(item)">
+                  <v-icon size="20">mdi-pencil-outline</v-icon>
+                </v-btn>
+              </template>
+            </v-tooltip>
+            <v-tooltip v-if="canDelete" text="Удалить" location="top">
+              <template #activator="{ props }">
+                <v-btn v-bind="props" icon variant="text" size="small" color="error" @click="deleteRole(item.id)">
+                  <v-icon size="20">mdi-delete-outline</v-icon>
+                </v-btn>
+              </template>
+            </v-tooltip>
+          </div>
+        </template>
+      </v-data-table>
+    </v-card>
 
     <v-dialog
       v-model="dialog"
       max-width="800px"
     >
-      <v-card>
-        <v-card-title>{{ selectedRole?.id ? 'Редактирование роли' : 'Создание роли' }}</v-card-title>
-        <v-card-text>
+      <v-card rounded="xl">
+        <div class="dialog-header pa-6 pb-4">
+          <div class="d-flex align-center ga-3">
+            <v-avatar size="40" color="primary" variant="tonal" rounded="lg">
+              <v-icon size="22">mdi-shield-edit-outline</v-icon>
+            </v-avatar>
+            <div>
+              <div class="text-h6 font-weight-bold">{{ selectedRole?.id ? 'Редактирование роли' : 'Создание роли' }}</div>
+              <div class="text-caption text-medium-emphasis">Настройте название и права доступа</div>
+            </div>
+          </div>
+        </div>
+        <v-divider />
+        <v-card-text class="pa-6">
           <v-text-field
             v-model="selectedRole!.name"
             variant="outlined"
+            rounded="lg"
+            density="comfortable"
             class="mb-4"
             label="Название"
             required
@@ -184,33 +218,41 @@ onMounted(() => {
           <v-text-field
             v-model="selectedRole!.description"
             variant="outlined"
+            rounded="lg"
+            density="comfortable"
             label="Описание"
+            class="mb-4"
           />
 
           <v-data-table
             :headers="permissionHeaders"
             :items="selectedRole!.permissions"
+            class="admin-table"
           >
             <template #item.read="{ item }">
-              <v-checkbox v-model="item.read" />
+              <v-checkbox v-model="item.read" color="primary" hide-details density="compact" />
             </template>
             <template #item.create="{ item }">
-              <v-checkbox v-model="item.create" />
+              <v-checkbox v-model="item.create" color="primary" hide-details density="compact" />
             </template>
             <template #item.update="{ item }">
-              <v-checkbox v-model="item.update" />
+              <v-checkbox v-model="item.update" color="primary" hide-details density="compact" />
             </template>
             <template #item.delete="{ item }">
-              <v-checkbox v-model="item.delete" />
+              <v-checkbox v-model="item.delete" color="primary" hide-details density="compact" />
             </template>
           </v-data-table>
         </v-card-text>
-        <v-card-actions>
-          <v-btn @click="dialog = false">
+        <v-divider />
+        <v-card-actions class="pa-5">
+          <v-spacer />
+          <v-btn variant="tonal" rounded="lg" @click="dialog = false">
             Отмена
           </v-btn>
           <v-btn
             color="primary"
+            variant="flat"
+            rounded="lg"
             :loading="saveLoading"
             @click="saveRole"
           >
@@ -222,8 +264,24 @@ onMounted(() => {
   </v-container>
 </template>
 
-<style scoped lang="scss">
-.v-btn {
-  margin-right: 8px;
+<style scoped>
+.admin-page {
+  background: #f8f7fc;
+  min-height: 100vh;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+.admin-card {
+  border: 1px solid rgba(0, 0, 0, 0.06);
+}
+.admin-table :deep(th) {
+  font-size: 0.75rem !important;
+  font-weight: 600 !important;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: rgba(0, 0, 0, 0.5) !important;
+}
+.dialog-header {
+  background: linear-gradient(135deg, rgba(103, 58, 183, 0.03), rgba(40, 53, 147, 0.05));
 }
 </style>

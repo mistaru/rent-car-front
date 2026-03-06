@@ -26,15 +26,6 @@
         </template>
       </v-img>
 
-      <!-- Year Badge -->
-      <v-chip
-        class="vehicle-card__year-badge"
-        color="primary"
-        size="small"
-        label
-      >
-        {{ vehicle.year }}
-      </v-chip>
 
       <!-- Status Badge -->
       <v-chip
@@ -166,11 +157,6 @@ function handleClick() {
   transform: none;
 }
 
-.vehicle-card__year-badge {
-  position: absolute;
-  top: 12px;
-  left: 12px;
-}
 
 .vehicle-card__status-badge {
   position: absolute;

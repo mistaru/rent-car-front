@@ -60,33 +60,45 @@ onMounted(() => {
 </script>
 
 <template>
-  <v-container
-    fluid
-  >
-    <h3>Информация о пользователе</h3>
-    <div
-      class="d-flex ga-10 mt-5"
-    >
-      <v-btn
-        color="blue"
-        class="ma-2"
-        @click="openModal"
-      >
-        Обновить пароль
-      </v-btn>
-
-      <v-select
-        v-model="role"
-        :items="user.roles"
-        item-title="description"
-        item-value="id"
-        variant="outlined"
-        class="profile-roles"
-        label="Текущая роль"
-        density="compact"
-        @update:model-value="activateRole"
-      />
+  <v-container fluid class="admin-page pa-6">
+    <!-- Page header -->
+    <div class="d-flex align-center ga-3 mb-6">
+      <v-avatar size="40" color="primary" variant="tonal" rounded="lg">
+        <v-icon size="22">mdi-account-outline</v-icon>
+      </v-avatar>
+      <div>
+        <h1 class="text-h5 font-weight-bold">Профиль</h1>
+        <p class="text-caption text-medium-emphasis">Информация о пользователе</p>
+      </div>
     </div>
+
+    <v-card elevation="0" rounded="xl" class="admin-card pa-6">
+      <div class="d-flex ga-4 align-center flex-wrap">
+        <v-btn
+          color="primary"
+          variant="flat"
+          rounded="lg"
+          @click="openModal"
+        >
+          <v-icon start>mdi-lock-reset</v-icon>
+          Обновить пароль
+        </v-btn>
+
+        <v-select
+          v-model="role"
+          :items="user.roles"
+          item-title="description"
+          item-value="id"
+          variant="outlined"
+          rounded="lg"
+          density="comfortable"
+          class="profile-roles"
+          label="Текущая роль"
+          hide-details
+          @update:model-value="activateRole"
+        />
+      </div>
+    </v-card>
   </v-container>
   <ModalDialog
     v-model:dialog="isModal"
@@ -100,6 +112,9 @@ onMounted(() => {
         v-model="passwordInfo.currentPassword"
         label="Текущий пароль"
         :type="showCurrentPassword ? 'text' : 'password'"
+        variant="outlined"
+        rounded="lg"
+        density="comfortable"
         append-inner-icon="mdi-eye"
         @click:append-inner="showCurrentPassword = !showCurrentPassword"
       />
@@ -108,6 +123,9 @@ onMounted(() => {
         label="Новый пароль"
         :type="showNewPassword ? 'text' : 'password'"
         :rules="passwordRules"
+        variant="outlined"
+        rounded="lg"
+        density="comfortable"
         append-inner-icon="mdi-eye"
         @click:append-inner="showNewPassword = !showNewPassword"
       />
@@ -116,13 +134,25 @@ onMounted(() => {
         label="Повторите новый пароль"
         :type="showRepeatPassword ? 'text' : 'password'"
         :rules="passwordRules"
+        variant="outlined"
+        rounded="lg"
+        density="comfortable"
         append-inner-icon="mdi-eye"
         @click:append-inner="showRepeatPassword = !showRepeatPassword"
       />
     </v-form>
   </ModalDialog>
 </template>
-<style>
+<style scoped>
+.admin-page {
+  background: #f8f7fc;
+  min-height: 100vh;
+  max-width: 800px;
+  margin: 0 auto;
+}
+.admin-card {
+  border: 1px solid rgba(0, 0, 0, 0.06);
+}
 .profile-roles {
   max-width: 300px;
 }
