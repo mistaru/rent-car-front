@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
+import api from "@/axios/api";
 
-const API_BASE = 'http://localhost:8081';
 
 interface CalendarBooking {
   id: number;
@@ -35,8 +35,7 @@ const statusConfig: Record<string, { color: string; icon: string; label: string 
 async function fetchCalendar() {
   loading.value = true;
   try {
-    const res = await fetch(`${API_BASE}/api/v1/bookings/calendar`);
-    if (res.ok) bookings.value = await res.json();
+    bookings.value = await api.get<CalendarBooking[]>(`/api/v1/bookings/calendar`);
   } catch (e) {
     console.error('fetchCalendar error:', e);
   } finally {

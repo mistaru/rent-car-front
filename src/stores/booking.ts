@@ -1,6 +1,8 @@
 import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
 import type { Vehicle } from './vehicles';
+import api from "@/axios/api";
+
 
 export interface BookingDetails {
   pickupLocation: number | null;
@@ -51,7 +53,6 @@ export interface PriceBreakdown {
   currency: string;
 }
 
-const API_BASE = 'http://localhost:8081';
 
 export const useBookingStore = defineStore('booking', () => {
   const selectedVehicle = ref<Vehicle | null>(null);
@@ -83,12 +84,11 @@ export const useBookingStore = defineStore('booking', () => {
   /** Загружает доп. услуги из API (service_options) */
   async function fetchServiceOptions() {
     try {
-      const res = await fetch(`${API_BASE}/api/v1/service-options/active`);
-      if (!res.ok) return;
-      const data: Array<{
+      const data = await api.get<Array<{
         id: number; code: string; name: string; description: string;
         category: string; icon: string; pricePerDay: number;
-      }> = await res.json();
+      }>>('/api/v1/service-options/active');
+
       addons.value = data.map(opt => ({
         id: opt.code,
         title: opt.name,
@@ -210,26 +210,17 @@ export const useBookingStore = defineStore('booking', () => {
   }
 
   async function fetchLocations() {
-    const res = await fetch(`${API_BASE}/api/v1/locations`);
-    locations.value = await res.json();
+    locations.value = await api.get<LocationDto[]>('/api/v1/locations');
   }
 
   async function fetchVehicleById(id: number) {
-    const res = await fetch(`${API_BASE}/api/v1/vehicles/${id}`);
-    selectedVehicle.value = await res.json();
+    selectedVehicle.value = await api.get<Vehicle>('/api/v1/vehicles/'+ id);
   }
 
   async function createCustomer() {
-    const res = await fetch(`${API_BASE}/api/v1/customers`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(personalInfo.value),
-    });
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err.message || 'Failed to create customer');
-    }
-    return await res.json();
+    return await api.post<{
+      id: number; fullName: string; email: string; phone: string;
+      additionalInfo: string;}>(`/api/v1/customers`, personalInfo.value);
   }
 
   async function calculatePrice() {
@@ -242,9 +233,7 @@ export const useBookingStore = defineStore('booking', () => {
       currency: 'USD',
     });
     addOns.forEach(a => params.append('addOns', a));
-    const res = await fetch(`${API_BASE}/api/v1/pricing/calculate/vehicle/${selectedVehicle.value.id}?${params.toString()}`);
-    if (!res.ok) return; // silently fail for price calculation
-    priceBreakdown.value = await res.json();
+    priceBreakdown.value = await api.get<PriceBreakdown>(`/api/v1/pricing/calculate/vehicle/${selectedVehicle.value.id}?${params.toString()}`);
   }
 
   async function createBooking(customerId: number) {
@@ -262,40 +251,22 @@ export const useBookingStore = defineStore('booking', () => {
       addOns,
       currency: 'USD',
     };
-    const res = await fetch(`${API_BASE}/api/v1/bookings`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
-    });
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err.message || 'Failed to create booking');
-    }
-    return await res.json();
+    return await api.post<{id : number;}>(`/api/v1/bookings`, body);
   }
 
   async function initiatePayment(bookingId: number) {
     if (!bookingId) throw new Error('Booking ID is required for payment');
-    const res = await fetch(`${API_BASE}/api/v1/payments/initiate/${bookingId}`, { method: 'POST' });
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err.message || 'Failed to initiate payment');
-    }
-    return await res.json();
+    return await api.post<{id: number; bookingId: number; method: string;
+      status: string; amount: number;
+      transactionId: string; createdAt: string;}>
+    (`/api/v1/payments/initiate/${bookingId}`);
   }
 
   async function processPayment(bookingId: number, transactionId: string) {
     if (!bookingId) throw new Error('Booking ID is required for payment processing');
-    const res = await fetch(`${API_BASE}/api/v1/payments/process`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ bookingId, transactionId, success: true }),
-    });
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err.message || 'Failed to process payment');
-    }
-    return await res.json();
+    return await api.post<{id: number; bookingId: number; method: string;
+      status: string; amount: number; transactionId: string; createdAt: string;}>
+    (`/api/v1/payments/process`,  JSON.stringify({ bookingId, transactionId, success: true }));
   }
 
   async function confirmBooking() {

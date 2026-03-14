@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
+import api from "@/axios/api";
 
-const API_BASE = 'http://localhost:8081';
 
 interface VehicleAttributeItem {
   id: number;
@@ -71,8 +71,7 @@ const filteredItems = computed(() => {
 async function fetchAll() {
   loading.value = true;
   try {
-    const res = await fetch(`${API_BASE}/api/v1/vehicle-attributes`);
-    if (res.ok) items.value = await res.json();
+    items.value = await api.get<VehicleAttributeItem[]>(`/api/v1/vehicle-attributes`);
   } catch (e) {
     console.error('fetch error:', e);
   } finally {
@@ -121,20 +120,16 @@ async function saveItem() {
     active: form.value.active,
   };
   const url = isEditing.value && selectedItem.value
-    ? `${API_BASE}/api/v1/vehicle-attributes/${selectedItem.value.id}`
-    : `${API_BASE}/api/v1/vehicle-attributes`;
+    ? `/api/v1/vehicle-attributes/${selectedItem.value.id}`
+    : `/api/v1/vehicle-attributes`;
   const method = isEditing.value ? 'PUT' : 'POST';
   try {
-    const res = await fetch(url, {
-      method,
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
-    });
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      alert(err.message || 'Ошибка сохранения');
-      return;
+    if (method === 'POST') {
+      await api.post<VehicleAttributeItem>(url, body);
+    } else {
+      await api.put<VehicleAttributeItem>(url, body);
     }
+
     formDialog.value = false;
     await fetchAll();
   } catch (e) {
@@ -145,7 +140,7 @@ async function saveItem() {
 async function confirmDelete() {
   if (!selectedItem.value) return;
   try {
-    await fetch(`${API_BASE}/api/v1/vehicle-attributes/${selectedItem.value.id}`, { method: 'DELETE' });
+    await api.delete(`/api/v1/vehicle-attributes/${selectedItem.value.id}`);
     deleteDialog.value = false;
     selectedItem.value = null;
     await fetchAll();

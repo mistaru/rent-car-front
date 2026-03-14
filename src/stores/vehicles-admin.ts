@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
+import api from '@/axios/api';
 
 export interface VehicleAdmin {
   id: number;
@@ -61,10 +62,19 @@ export interface CreateBlockedPeriodData {
   reason: string;
 }
 
-const API_BASE = 'http://localhost:8081';
+export interface VehicleImage {
+  id: number;
+  vehicleId: number;
+  filename: string;
+  mimeType: string;
+  main: boolean;
+  sortOrder: number;
+  url: string; // относительный путь, используй BASE_URL + url
+}
 
 export const useVehiclesAdminStore = defineStore('vehicles-admin', () => {
   const vehicles = ref<VehicleAdmin[]>([]);
+  const vehicleImages = ref<Record<number, VehicleImage[]>>({});
   const locations = ref<LocationItem[]>([]);
   const blockedPeriods = ref<BlockedPeriod[]>([]);
   const loading = ref(false);
@@ -72,9 +82,7 @@ export const useVehiclesAdminStore = defineStore('vehicles-admin', () => {
   async function fetchAllVehicles() {
     loading.value = true;
     try {
-      const res = await fetch(`${API_BASE}/api/v1/vehicles/all`);
-      if (!res.ok) throw new Error('Ошибка загрузки автомобилей');
-      vehicles.value = await res.json();
+      vehicles.value = await api.get<VehicleAdmin[]>('/api/v1/vehicles/all');
     } catch (e) {
       console.error('fetchAllVehicles error:', e);
     } finally {
@@ -82,12 +90,18 @@ export const useVehiclesAdminStore = defineStore('vehicles-admin', () => {
     }
   }
 
+  async function fetchImages(vehicleId: number) {
+    try {
+      const images = await api.get<VehicleImage[]>(`/api/v1/vehicle-images/vehicle/${vehicleId}`);
+      vehicleImages.value[vehicleId] = images;
+    } catch (e) {
+      console.error('fetchImages error:', e);
+    }
+  }
+
   async function fetchLocations() {
     try {
-      const res = await fetch(`${API_BASE}/api/v1/locations`);
-      if (res.ok) {
-        locations.value = await res.json();
-      }
+      locations.value = await api.get<LocationItem[]>(`/api/v1/locations`);
     } catch (e) {
       console.error('fetchLocations error:', e);
     }
@@ -95,13 +109,7 @@ export const useVehiclesAdminStore = defineStore('vehicles-admin', () => {
 
   async function createVehicle(data: VehicleFormData): Promise<VehicleAdmin | null> {
     try {
-      const res = await fetch(`${API_BASE}/api/v1/vehicles`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      });
-      if (!res.ok) throw new Error('Ошибка создания автомобиля');
-      const created = await res.json();
+      const created = await api.post<VehicleAdmin>('/api/v1/vehicles', data);
       await fetchAllVehicles();
       return created;
     } catch (e) {
@@ -112,13 +120,7 @@ export const useVehiclesAdminStore = defineStore('vehicles-admin', () => {
 
   async function updateVehicle(id: number, data: VehicleFormData): Promise<VehicleAdmin | null> {
     try {
-      const res = await fetch(`${API_BASE}/api/v1/vehicles/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      });
-      if (!res.ok) throw new Error('Ошибка обновления автомобиля');
-      const updated = await res.json();
+      const updated = await api.put<VehicleAdmin>(`/api/v1/vehicles/${id}`, data);
       await fetchAllVehicles();
       return updated;
     } catch (e) {
@@ -129,10 +131,7 @@ export const useVehiclesAdminStore = defineStore('vehicles-admin', () => {
 
   async function deleteVehicle(id: number): Promise<boolean> {
     try {
-      const res = await fetch(`${API_BASE}/api/v1/vehicles/${id}`, {
-        method: 'DELETE',
-      });
-      if (!res.ok) throw new Error('Ошибка удаления автомобиля');
+      await api.delete(`/api/v1/vehicles/${id}`);
       await fetchAllVehicles();
       return true;
     } catch (e) {
@@ -141,12 +140,45 @@ export const useVehiclesAdminStore = defineStore('vehicles-admin', () => {
     }
   }
 
+  async function uploadImage(vehicleId: number, file: File, isMain = false): Promise<VehicleImage | null> {
+    try {
+      const form = new FormData();
+      form.append('file', file);
+      form.append('isMain', String(isMain));
+      const image = await api.post<VehicleImage>(
+        `/api/v1/vehicle-images/vehicle/${vehicleId}`, form
+      );
+      await fetchImages(vehicleId);
+      return image;
+    } catch (e) {
+      console.error('uploadImage error:', e);
+      return null;
+    }
+  }
+
+  async function setMainImage(imageId: number, vehicleId: number) {
+    try {
+      await api.patch(`/api/v1/vehicle-images/${imageId}/set-main`);
+      await fetchImages(vehicleId);
+    } catch (e) {
+      console.error('setMainImage error:', e);
+    }
+  }
+
+  async function deleteImage(imageId: number, vehicleId: number) {
+    try {
+      await api.delete(`/api/v1/vehicle-images/${imageId}`);
+      await fetchImages(vehicleId);
+    } catch (e) {
+      console.error('deleteImage error:', e);
+    }
+  }
+
   // ===== Blocked Periods =====
 
   async function fetchBlockedPeriods() {
     try {
-      const res = await fetch(`${API_BASE}/api/v1/vehicles/blocked-periods`);
-      if (res.ok) blockedPeriods.value = await res.json();
+      blockedPeriods.value = await api.get<BlockedPeriod[]>('/api/v1/vehicles/blocked-periods');
     } catch (e) {
       console.error('fetchBlockedPeriods error:', e);
     }
@@ -154,9 +186,7 @@ export const useVehiclesAdminStore = defineStore('vehicles-admin', () => {
 
   async function fetchBlockedPeriodsByVehicle(vehicleId: number) {
     try {
-      const res = await fetch(`${API_BASE}/api/v1/vehicles/blocked-periods/vehicle/${vehicleId}`);
-      if (res.ok) return await res.json() as BlockedPeriod[];
-      return [];
+      return await api.get<BlockedPeriod[]>(`/api/v1/vehicles/blocked-periods/vehicle/${vehicleId}`);
     } catch (e) {
       console.error('fetchBlockedPeriodsByVehicle error:', e);
       return [];
@@ -165,16 +195,7 @@ export const useVehiclesAdminStore = defineStore('vehicles-admin', () => {
 
   async function createBlockedPeriod(data: CreateBlockedPeriodData): Promise<BlockedPeriod | null> {
     try {
-      const res = await fetch(`${API_BASE}/api/v1/vehicles/blocked-periods`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      });
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err.message || 'Ошибка создания блокировки');
-      }
-      const created = await res.json();
+      const created = await api.post<BlockedPeriod>('/api/v1/vehicles/blocked-periods', data);
       await fetchBlockedPeriods();
       return created;
     } catch (e: any) {
@@ -185,16 +206,7 @@ export const useVehiclesAdminStore = defineStore('vehicles-admin', () => {
 
   async function updateBlockedPeriod(id: number, data: CreateBlockedPeriodData): Promise<BlockedPeriod | null> {
     try {
-      const res = await fetch(`${API_BASE}/api/v1/vehicles/blocked-periods/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      });
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err.message || 'Ошибка обновления блокировки');
-      }
-      const updated = await res.json();
+      const updated = await api.put<BlockedPeriod>(`/api/v1/vehicles/blocked-periods/${id}`, data);
       await fetchBlockedPeriods();
       return updated;
     } catch (e: any) {
@@ -205,10 +217,7 @@ export const useVehiclesAdminStore = defineStore('vehicles-admin', () => {
 
   async function deleteBlockedPeriod(id: number): Promise<boolean> {
     try {
-      const res = await fetch(`${API_BASE}/api/v1/vehicles/blocked-periods/${id}`, {
-        method: 'DELETE',
-      });
-      if (!res.ok) throw new Error('Ошибка удаления блокировки');
+      await api.delete(`/api/v1/vehicles/blocked-periods/${id}`);
       await fetchBlockedPeriods();
       return true;
     } catch (e) {
@@ -219,14 +228,19 @@ export const useVehiclesAdminStore = defineStore('vehicles-admin', () => {
 
   return {
     vehicles,
+    vehicleImages,
     locations,
     blockedPeriods,
     loading,
     fetchAllVehicles,
     fetchLocations,
+    fetchImages,
     createVehicle,
     updateVehicle,
     deleteVehicle,
+    uploadImage,
+    setMainImage,
+    deleteImage,
     fetchBlockedPeriods,
     fetchBlockedPeriodsByVehicle,
     createBlockedPeriod,

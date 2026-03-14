@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
+import api from "@/axios/api";
 
-const API_BASE = 'http://localhost:8081';
 
 interface ReportData {
   totalBookings: number;
@@ -73,8 +73,7 @@ async function fetchReport() {
     if (dateTo.value) params.append('dateTo', dateTo.value);
     if (bookingStatus.value) params.append('bookingStatus', bookingStatus.value);
     if (carClass.value) params.append('carClass', carClass.value);
-    const res = await fetch(`${API_BASE}/api/v1/reports?${params.toString()}`);
-    if (res.ok) report.value = await res.json();
+    report.value = await api.get<ReportData>(`/api/v1/reports?${params.toString()}`);
   } catch (e) {
     console.error('fetchReport error:', e);
   } finally {

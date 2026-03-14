@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import ModalDialog from '@/components/UserModal.vue';
+import api from "@/axios/api";
 
-const API_BASE = 'http://localhost:8081';
 
 interface ServiceOption {
   id: number;
@@ -101,8 +101,7 @@ const activeCount = computed(() => items.value.filter(i => i.active).length);
 async function fetchAll() {
   loading.value = true;
   try {
-    const res = await fetch(`${API_BASE}/api/v1/service-options`);
-    if (res.ok) items.value = await res.json();
+    items.value = await api.get<ServiceOption[]>(`/api/v1/service-options`);
   } catch (e) {
     console.error('fetch error:', e);
   } finally {
@@ -141,19 +140,14 @@ function openDelete(item: ServiceOption) {
 
 async function saveItem() {
   const url = isEditing.value && selectedItem.value
-    ? `${API_BASE}/api/v1/service-options/${selectedItem.value.id}`
-    : `${API_BASE}/api/v1/service-options`;
+    ? `/api/v1/service-options/${selectedItem.value.id}`
+    : `/api/v1/service-options`;
   const method = isEditing.value ? 'PUT' : 'POST';
   try {
-    const res = await fetch(url, {
-      method,
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(form.value),
-    });
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      alert(err.message || 'Ошибка сохранения');
-      return;
+    if (method === 'POST') {
+      await api.post<ServiceOption>(url, form.value);
+    } else {
+      await api.put<ServiceOption>(url, form.value);
     }
     formDialog.value = false;
     await fetchAll();
@@ -165,7 +159,7 @@ async function saveItem() {
 async function confirmDelete() {
   if (!selectedItem.value) return;
   try {
-    await fetch(`${API_BASE}/api/v1/service-options/${selectedItem.value.id}`, { method: 'DELETE' });
+    await api.delete(`/api/v1/service-options/${selectedItem.value.id}`);
     deleteDialog.value = false;
     selectedItem.value = null;
     await fetchAll();

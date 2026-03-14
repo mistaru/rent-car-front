@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
+import api from "@/axios/api";
 
 export interface Vehicle {
   id: number;
@@ -49,7 +50,7 @@ export interface LocationItem {
   country: string;
 }
 
-const API_BASE = 'http://localhost:8081';
+
 
 export const useVehicleStore = defineStore('vehicles', () => {
   // Состояния
@@ -87,10 +88,7 @@ export const useVehicleStore = defineStore('vehicles', () => {
 
   async function fetchDynamicFilters() {
     try {
-      const res = await fetch(`${API_BASE}/api/v1/vehicle-attributes/filters`);
-      if (res.ok) {
-        dynamicFilters.value = await res.json();
-      }
+      dynamicFilters.value = await api.get<DynamicFilter[]>(`/api/v1/vehicle-attributes/filters`);
     } catch (e) {
       console.error('Failed to fetch dynamic filters', e);
     }
@@ -101,25 +99,31 @@ export const useVehicleStore = defineStore('vehicles', () => {
     loading.value = true;
     error.value = null;
     try {
-      const params = new URLSearchParams();
-      if (filters.value.carClass) params.append('carClass', filters.value.carClass);
-      if (filters.value.drivetrain && filters.value.drivetrain !== 'all') params.append('drivetrain', filters.value.drivetrain);
-      if (filters.value.fuelType && filters.value.fuelType !== 'all') params.append('fuelType', filters.value.fuelType);
-      // Send dynamic attribute filters as attr_CODE=value
+      const params: Record<string, string | string[]> = {};
+
+      if (filters.value.carClass) params['carClass'] = filters.value.carClass;
+      if (filters.value.drivetrain && filters.value.drivetrain !== 'all') params['drivetrain'] = filters.value.drivetrain;
+      if (filters.value.fuelType && filters.value.fuelType !== 'all') params['fuelType'] = filters.value.fuelType;
+
       for (const df of dynamicFilters.value) {
         const val = filters.value[df.code];
         if (val && val !== 'all' && val !== '') {
-          params.append(`attr_${df.code}`, val);
+          params[`attr_${df.code}`] = val;
         }
       }
-      if (searchParams.value.pickupLocation !== null) params.append('locationId', String(searchParams.value.pickupLocation));
-      if (searchParams.value.pickupDate) params.append('pickupDate', searchParams.value.pickupDate);
-      if (searchParams.value.dropoffDate) params.append('dropoffDate', searchParams.value.dropoffDate);
-      params.append('page', String(page.value));
-      params.append('size', String(pageSize.value));
-      const res = await fetch(`${API_BASE}/api/v1/vehicles?${params.toString()}`);
-      if (!res.ok) throw new Error('Ошибка загрузки автомобилей');
-      const data = await res.json();
+
+      if (searchParams.value.pickupLocation !== null) params['locationId'] = String(searchParams.value.pickupLocation);
+      if (searchParams.value.pickupDate) params['pickupDate'] = searchParams.value.pickupDate;
+      if (searchParams.value.dropoffDate) params['dropoffDate'] = searchParams.value.dropoffDate;
+
+      params['page'] = String(page.value);
+      params['size'] = String(pageSize.value);
+
+      const data = await api.get<{ content: Vehicle[]; totalElements: number; totalPages: number }>(
+        '/api/v1/vehicles',
+        { params },
+      );
+
       vehicles.value = data.content;
       totalCount.value = data.totalElements;
       totalPages.value = data.totalPages;
@@ -136,9 +140,7 @@ export const useVehicleStore = defineStore('vehicles', () => {
     loading.value = true;
     error.value = null;
     try {
-      const res = await fetch(`${API_BASE}/api/v1/vehicles/${id}`);
-      if (!res.ok) throw new Error('Автомобиль не найден');
-      return await res.json();
+      return await api.get<Vehicle>(`/api/v1/vehicles/${id}`);
     } catch (e: any) {
       error.value = e.message || 'Ошибка';
       return null;
@@ -196,10 +198,7 @@ export const useVehicleStore = defineStore('vehicles', () => {
 
   async function fetchLocations() {
     try {
-      const res = await fetch(`${API_BASE}/api/v1/locations`);
-      if (res.ok) {
-        locations.value = await res.json();
-      }
+      locations.value = await api.get<LocationItem[]>(`/api/v1/locations`);
     } catch (e) {
       console.error('Failed to fetch locations', e);
     }

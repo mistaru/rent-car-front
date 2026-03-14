@@ -3,6 +3,7 @@ import { ref, computed, onMounted } from 'vue';
 import { useVehiclesAdminStore } from '@/stores/vehicles-admin';
 import type { VehicleAdmin, VehicleFormData, BlockedPeriod, CreateBlockedPeriodData } from '@/stores/vehicles-admin';
 import ModalDialog from '@/components/UserModal.vue';
+import { BASE_URL } from '@/axios/api';
 
 const store = useVehiclesAdminStore();
 
@@ -18,6 +19,15 @@ const searchText = ref('');
 const statusFilter = ref('all');
 const blockSaving = ref(false);
 const blockError = ref('');
+const pendingDeleteImageIds = ref<number[]>([]);
+const lightbox = ref(false);
+const lightboxSrc = ref('');
+
+const openLightbox = (url: string) => {
+  lightboxSrc.value = url;
+  lightbox.value = true;
+};
+
 
 const reasonOptions = [
   'Техобслуживание',
@@ -201,6 +211,7 @@ const openCreate = () => {
 const openEdit = (vehicle: VehicleAdmin) => {
   isEditing.value = true;
   selectedVehicle.value = vehicle;
+  pendingDeleteImageIds.value = [];
   form.value = {
     brand: vehicle.brand,
     model: vehicle.model,
@@ -217,6 +228,7 @@ const openEdit = (vehicle: VehicleAdmin) => {
     locationId: vehicle.locationId,
     pricingTemplateId: vehicle.pricingTemplateId,
   };
+  store.fetchImages(vehicle.id);
   formDialog.value = true;
 };
 
@@ -227,6 +239,13 @@ const openDelete = (vehicle: VehicleAdmin) => {
 
 const saveVehicle = async () => {
   if (isEditing.value && selectedVehicle.value) {
+    // Сначала удаляем помеченные фото
+    await Promise.all(
+      pendingDeleteImageIds.value.map(id =>
+        store.deleteImage(id, selectedVehicle.value!.id)
+      )
+    );
+    pendingDeleteImageIds.value = [];
     await store.updateVehicle(selectedVehicle.value.id, form.value);
   } else {
     await store.createVehicle(form.value);
@@ -243,6 +262,21 @@ const confirmDelete = async () => {
 
 const formatMoney = (v: number) => {
   return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(v);
+};
+
+const onImageUpload = async (e: Event) => {
+  const file = (e.target as HTMLInputElement).files?.[0];
+  if (!file || !selectedVehicle.value) return;
+  const isFirst = !(store.vehicleImages[selectedVehicle.value.id]?.length);
+  await store.uploadImage(selectedVehicle.value.id, file, isFirst);
+};
+
+const markImageForDelete = (imageId: number) => {
+  pendingDeleteImageIds.value.push(imageId);
+};
+
+const isMarkedForDelete = (imageId: number) => {
+  return pendingDeleteImageIds.value.includes(imageId);
 };
 
 onMounted(fetchData);
@@ -627,6 +661,85 @@ onMounted(fetchData);
                 </v-img>
               </v-card>
             </v-col>
+
+            <!-- Images Section (только при редактировании существующего авто) -->
+            <v-col cols="12" v-if="isEditing && selectedVehicle">
+              <v-divider class="my-2" />
+              <div class="detail-section__title mb-3">
+                <v-icon size="16" color="primary">mdi-image-multiple</v-icon>
+                Фотографии
+              </div>
+
+              <!-- Список загруженных -->
+              <div class="d-flex flex-wrap ga-2 mb-3">
+                <div
+                  v-for="img in store.vehicleImages[selectedVehicle.id] || []"
+                  :key="img.id"
+                  class="image-thumb"
+                  :class="{
+      'image-thumb--main': img.main,
+      'image-thumb--deleted': isMarkedForDelete(img.id)
+    }"
+                >
+                  <v-img
+                    :src="BASE_URL + img.url"
+                    width="90"
+                    height="70"
+                    cover
+                    rounded="lg"
+                    style="cursor: zoom-in"
+                    @click="!isMarkedForDelete(img.id) && openLightbox(BASE_URL + img.url)"
+                  />
+
+                  <!-- Оверлей "помечено на удаление" -->
+                  <div v-if="isMarkedForDelete(img.id)" class="image-thumb__delete-overlay">
+                    <v-icon color="white" size="20">mdi-delete-clock</v-icon>
+                    <span class="text-caption text-white" style="font-size: 10px">Удалится</span>
+                    <!-- Отменить -->
+                    <v-btn
+                      icon size="x-small" variant="flat"
+                      style="background: rgba(255,255,255,0.2)"
+                      @click.stop="pendingDeleteImageIds = pendingDeleteImageIds.filter(id => id !== img.id)"
+                    >
+                      <v-icon size="12" color="white">mdi-undo</v-icon>
+                    </v-btn>
+                  </div>
+
+                  <div class="image-thumb__actions" v-if="!isMarkedForDelete(img.id)">
+                    <v-btn
+                      icon size="x-small" variant="flat" color="warning"
+                      :disabled="img.main"
+                      @click.stop="store.setMainImage(img.id, selectedVehicle!.id)"
+                    >
+                      <v-icon size="14">mdi-star</v-icon>
+                    </v-btn>
+                    <v-btn
+                      icon size="x-small" variant="flat" color="error"
+                      @click.stop="markImageForDelete(img.id)"
+                    >
+                      <v-icon size="14">mdi-delete</v-icon>
+                    </v-btn>
+                  </div>
+
+                  <v-chip v-if="img.main && !isMarkedForDelete(img.id)" size="x-small" color="warning" class="image-thumb__badge">
+                    Главное
+                  </v-chip>
+                </div>
+              </div>
+
+              <!-- Загрузка нового -->
+              <v-file-input
+                label="Добавить фото"
+                accept="image/jpeg,image/png,image/webp"
+                variant="outlined"
+                rounded="lg"
+                density="comfortable"
+                prepend-icon=""
+                prepend-inner-icon="mdi-upload"
+                hide-details
+                @change="onImageUpload"
+              />
+            </v-col>
           </v-row>
         </v-card-text>
         <v-divider />
@@ -848,6 +961,32 @@ onMounted(fetchData);
   text-transform: uppercase;
   letter-spacing: 0.08em;
   color: rgba(0, 0, 0, 0.45);
+}
+
+.image-thumb {
+  position: relative;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 2px solid transparent;
+  transition: border-color 0.2s;
+}
+.image-thumb--main {
+  border-color: #FB8C00;
+}
+.image-thumb__actions {
+  position: absolute;
+  top: 2px; right: 2px;
+  display: flex;
+  gap: 2px;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+.image-thumb:hover .image-thumb__actions {
+  opacity: 1;
+}
+.image-thumb__badge {
+  position: absolute;
+  bottom: 3px; left: 3px;
 }
 </style>
 
