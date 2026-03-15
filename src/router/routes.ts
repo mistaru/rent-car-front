@@ -43,6 +43,11 @@ const staticRoutes: RouteRecordRaw[] = [
     component: () => import('@/pages/VehiclesAdmin.vue'),
   },
   {
+    path: '/payments-admin',
+    name: 'PaymentsAdmin',
+    component: () => import('@/pages/PaymentAdmin.vue'),
+  },
+  {
     path: '/auth',
     name: 'Users',
     component: () => import('@/pages/Credentials/Users.vue'),
