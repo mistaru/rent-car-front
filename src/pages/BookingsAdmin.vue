@@ -561,22 +561,24 @@ onMounted(fetchBookings);
                       {{ selectedBooking.priceTierDescription }}
                     </div>
                     <table class="pricing-table">
-                      <tr>
-                        <td class="text-body-2 text-medium-emphasis">{{ selectedBooking.days }}д × {{ formatMoney(selectedBooking.pricePerDay) }}</td>
-                        <td class="text-body-1 text-right">{{ formatMoney(selectedBooking.baseAmount) }}</td>
-                      </tr>
-                      <tr>
-                        <td class="text-body-2 text-medium-emphasis">Доп. услуги</td>
-                        <td class="text-body-1 text-right">{{ formatMoney(selectedBooking.addOnsAmount) }}</td>
-                      </tr>
-                      <tr>
-                        <td class="text-body-2 text-medium-emphasis">Сервисный сбор</td>
-                        <td class="text-body-1 text-right">{{ formatMoney(selectedBooking.serviceFee) }}</td>
-                      </tr>
-                      <tr class="pricing-total">
-                        <td class="text-body-1 font-weight-bold">Итого</td>
-                        <td class="text-h6 font-weight-bold text-right text-primary">{{ formatMoney(selectedBooking.totalAmount) }}</td>
-                      </tr>
+                      <tbody>
+                        <tr>
+                          <td class="text-body-2 text-medium-emphasis">{{ selectedBooking.days }}д × {{ formatMoney(selectedBooking.pricePerDay) }}</td>
+                          <td class="text-body-1 text-right">{{ formatMoney(selectedBooking.baseAmount) }}</td>
+                        </tr>
+                        <tr>
+                          <td class="text-body-2 text-medium-emphasis">Доп. услуги</td>
+                          <td class="text-body-1 text-right">{{ formatMoney(selectedBooking.addOnsAmount) }}</td>
+                        </tr>
+                        <tr>
+                          <td class="text-body-2 text-medium-emphasis">Сервисный сбор</td>
+                          <td class="text-body-1 text-right">{{ formatMoney(selectedBooking.serviceFee) }}</td>
+                        </tr>
+                        <tr class="pricing-total">
+                          <td class="text-body-1 font-weight-bold">Итого</td>
+                          <td class="text-h6 font-weight-bold text-right text-primary">{{ formatMoney(selectedBooking.totalAmount) }}</td>
+                        </tr>
+                      </tbody>
                     </table>
                     <div class="d-flex align-center ga-2 mt-2">
                       <span class="text-body-2 text-medium-emphasis">Предоплата 15%:</span>

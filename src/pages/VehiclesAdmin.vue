@@ -3,6 +3,7 @@ import { ref, computed, onMounted } from 'vue';
 import { useVehiclesAdminStore } from '@/stores/vehicles-admin';
 import type { VehicleAdmin, VehicleFormData, BlockedPeriod, CreateBlockedPeriodData } from '@/stores/vehicles-admin';
 import ModalDialog from '@/components/UserModal.vue';
+import CarImageCarousel from '@/components/rental/CarImageCarousel.vue';
 import { BASE_URL } from '@/axios/api';
 
 const store = useVehiclesAdminStore();
@@ -279,6 +280,15 @@ const isMarkedForDelete = (imageId: number) => {
   return pendingDeleteImageIds.value.includes(imageId);
 };
 
+const carouselImages = computed(() => {
+  if (!selectedVehicle.value) return [];
+  const imgs = store.vehicleImages[selectedVehicle.value.id] || [];
+  return imgs
+    .filter(img => !isMarkedForDelete(img.id))
+    .sort((a, b) => (a.main ? -1 : 1))
+    .map(img => BASE_URL + img.url);
+});
+
 onMounted(fetchData);
 </script>
 
@@ -504,6 +514,12 @@ onMounted(fetchData);
           </div>
         </div>
         <v-divider />
+        <CarImageCarousel
+          v-if="isEditing && selectedVehicle && carouselImages.length"
+          :images="carouselImages"
+          :height="220"
+          :alt="`${form.brand} ${form.model}`"
+        />
         <v-card-text class="pa-6">
           <v-row dense>
             <!-- Brand & Model -->

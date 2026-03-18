@@ -336,28 +336,39 @@
         <!-- Right Column: Summary -->
         <v-col cols="12" md="5" lg="4">
           <div class="summary-sticky">
-            <v-card elevation="0" rounded="xl" class="checkout-card">
-              <v-card-title class="pa-5 pb-3 text-subtitle-1 font-weight-bold">
-                <v-icon start color="primary">mdi-clipboard-text</v-icon>
-                Booking Summary
-              </v-card-title>
+            <v-card elevation="0" rounded="xl" class="checkout-card overflow-hidden">
 
-              <v-divider />
+              <!-- ═══════════════════════════════════════════ -->
+              <!--                IMAGE CAROUSEL               -->
+              <!-- ═══════════════════════════════════════════ -->
+              <CarImageCarousel
+                :images="vehicleImages"
+                :alt="`${bookingStore.selectedVehicle!.brand} ${bookingStore.selectedVehicle!.model}`"
+                :height="240"
+              />
 
-              <!-- Vehicle Info -->
-              <v-card-text class="pa-5">
-                <div class="d-flex ga-4 mb-4">
-                  <v-img
-                    :src="bookingStore.selectedVehicle!.image"
-                    width="120"
-                    height="80"
-                    cover
-                    rounded="lg"
-                  />
+              <!-- Vehicle title overlay row -->
+              <div class="summary-vehicle-title px-4 pt-3 pb-1">
+                <div class="d-flex align-start justify-space-between">
                   <div>
-                    <h4 class="text-subtitle-1 font-weight-bold">
+                    <h4 class="text-subtitle-1 font-weight-bold leading-tight">
                       {{ bookingStore.selectedVehicle!.brand }} {{ bookingStore.selectedVehicle!.model }}
                     </h4>
+                    <div class="d-flex align-center ga-2 mt-1 flex-wrap">
+                      <v-chip size="x-small" variant="tonal" color="grey-darken-1">
+                        {{ bookingStore.selectedVehicle!.carClass }}
+                      </v-chip>
+                      <v-chip
+                        v-if="bookingStore.priceBreakdown?.tierName"
+                        size="x-small"
+                        color="primary"
+                        variant="tonal"
+                      >
+                        {{ bookingStore.priceBreakdown.tierName }}
+                      </v-chip>
+                    </div>
+                  </div>
+                  <div class="text-right">
                     <div class="text-body-2 text-primary font-weight-bold">
                       <template v-if="bookingStore.priceBreakdown">
                         ${{ bookingStore.priceBreakdown.pricePerDay }}/day
@@ -367,25 +378,28 @@
                       </template>
                     </div>
                     <div class="text-caption text-medium-emphasis">
-                      {{ bookingStore.rentalDays }} day(s) •
-                      {{ pickupLocationName }}
+                      {{ bookingStore.rentalDays }} day(s)
                     </div>
-                    <v-chip
-                      v-if="bookingStore.priceBreakdown?.tierName"
-                      size="x-small"
-                      color="primary"
-                      variant="tonal"
-                      class="mt-1"
-                    >
-                      {{ bookingStore.priceBreakdown.tierName }}
-                    </v-chip>
                   </div>
                 </div>
+              </div>
 
-                <v-divider class="mb-4" />
+              <!-- Pickup info chip -->
+              <div class="px-4 pb-3">
+                <div class="text-caption text-medium-emphasis d-flex align-center ga-1">
+                  <v-icon size="12">mdi-map-marker</v-icon>
+                  {{ pickupLocationName }}
+                </div>
+              </div>
 
-                <!-- Price Breakdown -->
-                <h4 class="text-subtitle-2 font-weight-bold mb-3">Price Breakdown</h4>
+              <v-divider />
+
+              <!-- Price Breakdown -->
+              <v-card-text class="pa-4">
+                <h4 class="text-subtitle-2 font-weight-bold mb-3 d-flex align-center ga-2">
+                  <v-icon size="16" color="primary">mdi-receipt-text</v-icon>
+                  Price Breakdown
+                </h4>
 
                 <div class="d-flex justify-space-between mb-2">
                   <span class="text-body-2 text-medium-emphasis">
@@ -420,7 +434,7 @@
                 </div>
 
                 <!-- Prepayment info -->
-                <div v-if="bookingStore.priceBreakdown?.prepaymentAmount" class="d-flex justify-space-between align-center mb-2">
+                <div v-if="bookingStore.priceBreakdown?.prepaymentAmount" class="d-flex justify-space-between align-center mb-3">
                   <span class="text-body-2 text-medium-emphasis">Prepayment (15%)</span>
                   <span class="text-body-2 font-weight-bold text-success">${{ bookingStore.priceBreakdown.prepaymentAmount }}</span>
                 </div>
@@ -463,7 +477,7 @@
                   size="x-large"
                   rounded="lg"
                   elevation="0"
-                  class="mt-4 confirm-btn"
+                  class="mt-2 confirm-btn"
                   :disabled="!bookingStore.canSubmit"
                   :loading="bookingStore.submitting"
                   @click="bookingStore.confirmBooking()"
@@ -488,6 +502,7 @@ import { useRouter, useRoute } from 'vue-router';
 import { useBookingStore } from '@/stores/booking';
 import type { AddonOption } from '@/stores/booking';
 import RentalFooter from '@/components/rental/RentalFooter.vue';
+import CarImageCarousel from '@/components/rental/CarImageCarousel.vue';
 
 const router = useRouter();
 const route = useRoute();
@@ -502,7 +517,32 @@ const pickupLocationName = computed(() => {
   return loc ? loc.name : 'Location TBD';
 });
 
-// If navigated directly, load vehicle by ID from API
+import { BASE_URL } from '@/axios/api';
+
+
+
+const vehicleImages = computed((): string[] => {
+  const v = bookingStore.selectedVehicle as any;
+  if (!v) return [];
+  console.log("Selected vehicle: ", v);
+
+  if (Array.isArray(v.images) && v.images.length > 0) {
+    return v.images.map((p: any) => {
+      const url = typeof p === 'string' ? p : p.url;
+      if (!url) return '';
+      const curla = url.startsWith('http') ? url : BASE_URL + url;
+      console.log('BASE_URL ' + BASE_URL);
+      console.log('URL ROOT ' + url);
+      console.log('URL IMAGE ' + curla);
+      return url.startsWith('http') ? url : BASE_URL + url;
+    }).filter(Boolean);
+  }
+
+  console.log("Fallback to single image string: ", v);
+  if (v.image) return [v.image];
+  return [];
+});
+
 onMounted(async () => {
   if (!bookingStore.selectedVehicle && route.params.id) {
     await bookingStore.fetchVehicleById(Number(route.params.id));
@@ -511,13 +551,11 @@ onMounted(async () => {
     bookingStore.fetchLocations(),
     bookingStore.fetchServiceOptions(),
   ]);
-  // Initial price calculation if dates are set
   if (bookingStore.bookingDetails.pickupDate && bookingStore.bookingDetails.dropoffDate) {
     await bookingStore.calculatePrice();
   }
 });
 
-// Auto-recalculate price when dates or addons change
 watch(
   () => [
     bookingStore.bookingDetails.pickupDate,
@@ -579,6 +617,11 @@ onBeforeUnmount(() => {
   top: 80px;
 }
 
+/* Vehicle title below carousel */
+.summary-vehicle-title {
+  background: white;
+}
+
 /* Addon cards */
 .addon-card {
   border: 2px solid rgba(0, 0, 0, 0.08);
@@ -621,5 +664,9 @@ onBeforeUnmount(() => {
 
 .ls-wide {
   letter-spacing: 0.08em;
+}
+
+.leading-tight {
+  line-height: 1.3;
 }
 </style>

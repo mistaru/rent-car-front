@@ -7,6 +7,7 @@ export {}
 /* prettier-ignore */
 declare module 'vue' {
   export interface GlobalComponents {
+    CarImageCarousel: typeof import('./components/rental/CarImageCarousel.vue')['default']
     ConfirmDialog: typeof import('./components/ConfirmDialog.vue')['default']
     DataTable: typeof import('./components/DataTable.vue')['default']
     FilterPanel: typeof import('./components/rental/FilterPanel.vue')['default']
