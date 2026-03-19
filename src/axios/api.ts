@@ -10,7 +10,7 @@ type Env = 'local' | 'staging' | 'production';
 const ENV_MAP: Record<Env, string> = {
   local:      'http://localhost:8081',
   staging:    'https://staging.domain.com',
-  production: 'https://api.domain.com',
+  production: 'http://178.104.61.164:8080',
 };
 
 const HOSTNAME_TO_ENV: Array<{ match: string | RegExp; env: Env }> = [

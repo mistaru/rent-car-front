@@ -4,8 +4,8 @@ import router from '../router/index';
 const origin = window.location.origin;
 const dnsMapper:Record<string, string> = {
   'localhost': 'http://localhost:8081/api',
-  'test': 'http://178.104.61.164:8080/',
-  'http://178.104.61.164:8080': 'http://178.104.61.164:8080/',
+  'test': 'http://178.104.61.164:8080/api',
+  'http://178.104.61.164:8080/api': 'http://178.104.61.164:8080/api',
 };
 const getBaseUrl = () => {
   const matchedKey = Object.keys(dnsMapper).find(key => origin.includes(key));
