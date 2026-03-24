@@ -125,7 +125,9 @@ export const useVehicleStore = defineStore('vehicles', () => {
         { params },
       );
 
-      vehicles.value = data.content;
+      vehicles.value = page.value === 0
+        ? data.content
+        : [...vehicles.value, ...data.content];
       totalCount.value = data.totalElements;
       totalPages.value = data.totalPages;
       carClasses.value = [...new Set(data.content.map((v: Vehicle) => v.carClass))] as string[];
