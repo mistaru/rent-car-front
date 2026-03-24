@@ -3,6 +3,7 @@ import { computed, ref } from 'vue';
 import { useAppStore } from '@/stores/app';
 import { useRouter } from 'vue-router';
 import { useNotificationStore } from '@/stores/notifications';
+
 const { addNotification } = useNotificationStore();
 const username = ref('');
 const password = ref('');
@@ -69,6 +70,7 @@ const isDisabledBtn = computed(() => !username.value || !password.value);
               variant="outlined"
               label="Логин"
               placeholder="Введите логин"
+              persistent-placeholder
               prepend-icon="mdi-account"
               autocomplete="username"
               type="text"
@@ -81,6 +83,7 @@ const isDisabledBtn = computed(() => !username.value || !password.value);
               variant="outlined"
               label="Пароль"
               placeholder="Введите пароль"
+              persistent-placeholder
               prepend-icon="mdi-lock"
               type="password"
               required

@@ -531,6 +531,7 @@ onMounted(fetchData);
                 rounded="lg"
                 density="comfortable"
                 placeholder="Mercedes-Benz"
+                persistent-placeholder
                 :rules="[v => !!v || 'Обязательное поле']"
               />
             </v-col>
@@ -542,6 +543,7 @@ onMounted(fetchData);
                 rounded="lg"
                 density="comfortable"
                 placeholder="S-Class"
+                persistent-placeholder
                 :rules="[v => !!v || 'Обязательное поле']"
               />
             </v-col>
@@ -555,6 +557,7 @@ onMounted(fetchData);
                 rounded="lg"
                 density="comfortable"
                 placeholder="01 KG 001 AAA"
+                persistent-placeholder
               />
             </v-col>
             <v-col cols="12" sm="6">
@@ -662,6 +665,7 @@ onMounted(fetchData);
                 rounded="lg"
                 density="comfortable"
                 placeholder="https://images.unsplash.com/..."
+                persistent-placeholder
               />
             </v-col>
 
@@ -991,7 +995,8 @@ onMounted(fetchData);
 }
 .image-thumb__actions {
   position: absolute;
-  top: 2px; right: 2px;
+  top: 2px;
+  right: 2px;
   display: flex;
   gap: 2px;
   opacity: 0;
@@ -1002,7 +1007,8 @@ onMounted(fetchData);
 }
 .image-thumb__badge {
   position: absolute;
-  bottom: 3px; left: 3px;
+  bottom: 3px;
+  left: 3px;
 }
 </style>
 

@@ -280,7 +280,7 @@ onMounted(() => {
     </v-card>
 
     <!-- Create Payment Dialog -->
-    <v-dialog v-model="createDialog" max-width="600" persistent>
+    <v-dialog v-model="createDialog" max-width="600" scrollable>
       <v-card rounded="xl">
         <v-card-title class="pa-6 pb-2">
           <div class="d-flex align-center ga-3">
@@ -301,6 +301,7 @@ onMounted(() => {
                 label="Выберите бронирование для оплаты"
                 variant="outlined"
                 placeholder="Начните вводить ID или имя клиента"
+                persistent-placeholder
                 :loading="bookingsStore.loading"
                 clearable
                 rounded="lg"

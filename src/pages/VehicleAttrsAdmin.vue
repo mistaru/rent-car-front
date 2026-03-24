@@ -177,12 +177,12 @@ onMounted(fetchAll);
           <v-chip size="small" color="primary" variant="tonal" class="ml-1">{{ filteredItems.length }}</v-chip>
         </div>
         <v-text-field v-model="searchText" prepend-inner-icon="mdi-magnify" variant="solo-filled" flat
-          density="compact" rounded="lg" hide-details style="min-width: 220px; max-width: 300px"
-          clearable placeholder="Поиск..." />
+                      density="compact" rounded="lg" hide-details style="min-width: 220px; max-width: 300px"
+                      clearable placeholder="Поиск..."/>
       </div>
 
       <v-data-table :headers="headers" :items="filteredItems" :loading="loading" item-value="id" hover
-        items-per-page="20" class="attrs-table">
+                    items-per-page="20" class="attrs-table">
 
         <template #item.code="{ item }">
           <code class="text-caption">{{ item.code }}</code>
@@ -190,7 +190,7 @@ onMounted(fetchAll);
 
         <template #item.valueType="{ item }">
           <v-chip :color="typeConfig[item.valueType]?.color || 'grey'" size="small" variant="tonal"
-            :prepend-icon="typeConfig[item.valueType]?.icon">
+                  :prepend-icon="typeConfig[item.valueType]?.icon">
             {{ item.valueType }}
           </v-chip>
         </template>
@@ -263,24 +263,24 @@ onMounted(fetchAll);
           <v-row dense>
             <v-col cols="12" sm="6">
               <v-text-field v-model="form.code" label="Код (уникальный)" variant="outlined" rounded="lg"
-                density="comfortable" placeholder="BODY_TYPE" :disabled="isEditing" />
+                            density="comfortable" placeholder="BODY_TYPE" :disabled="isEditing" persistent-placeholder />
             </v-col>
             <v-col cols="12" sm="6">
               <v-text-field v-model="form.name" label="Название" variant="outlined" rounded="lg"
-                density="comfortable" placeholder="Тип кузова" />
+                            density="comfortable" placeholder="Тип кузова" persistent-placeholder />
             </v-col>
             <v-col cols="12" sm="6">
               <v-select v-model="form.valueType" label="Тип значения" :items="valueTypeOptions"
-                item-title="title" item-value="value" variant="outlined" rounded="lg" density="comfortable" />
+                        item-title="title" item-value="value" variant="outlined" rounded="lg" density="comfortable" />
             </v-col>
             <v-col cols="12" sm="6">
               <v-text-field v-model.number="form.sortOrder" label="Порядок" type="number"
-                variant="outlined" rounded="lg" density="comfortable" min="0" />
+                            variant="outlined" rounded="lg" density="comfortable" min="0" />
             </v-col>
             <v-col cols="12" v-if="form.valueType === 'ENUM'">
               <v-textarea v-model="form.possibleValuesText" label="Допустимые значения (через запятую)"
-                variant="outlined" rounded="lg" density="comfortable" rows="2" auto-grow
-                placeholder="Sedan, SUV, Coupe, Hatchback" />
+                          variant="outlined" rounded="lg" density="comfortable" rows="2" auto-grow
+                          placeholder="Sedan, SUV, Coupe, Hatchback" persistent-placeholder />
             </v-col>
             <v-col cols="6">
               <v-switch v-model="form.filterable" label="Фильтр" color="primary" hide-details />
@@ -330,12 +330,15 @@ onMounted(fetchAll);
   max-width: 1200px;
   margin: 0 auto;
 }
+
 .table-card {
   border: 1px solid rgba(0, 0, 0, 0.06);
 }
+
 .dialog-header {
   background: linear-gradient(135deg, rgba(103, 58, 183, 0.03), rgba(40, 53, 147, 0.05));
 }
+
 .attrs-table :deep(th) {
   font-size: 0.75rem !important;
   font-weight: 600 !important;

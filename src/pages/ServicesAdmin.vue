@@ -335,15 +335,17 @@ onMounted(fetchAll);
         <v-card-text class="pa-6">
           <v-row dense>
             <v-col cols="12" sm="6">
-              <v-text-field v-model="form.code" label="Код (уникальный)" variant="outlined" rounded="lg" density="comfortable"
-                placeholder="ROOF_TENT" :disabled="isEditing" />
+              <v-text-field v-model="form.code" label="Код (уникальный)" variant="outlined" rounded="lg"
+                            density="comfortable"
+                            :disabled="isEditing"/>
             </v-col>
             <v-col cols="12" sm="6">
               <v-text-field v-model="form.name" label="Название" variant="outlined" rounded="lg" density="comfortable" />
             </v-col>
             <v-col cols="12">
-              <v-textarea v-model="form.description" label="Описание" variant="outlined" rounded="lg" density="comfortable"
-                rows="2" auto-grow />
+              <v-textarea v-model="form.description" label="Описание" variant="outlined" rounded="lg"
+                          density="comfortable"
+                          rows="2" auto-grow/>
             </v-col>
             <v-col cols="12" sm="6">
               <v-select v-model="form.category" label="Категория"
@@ -358,7 +360,7 @@ onMounted(fetchAll);
             </v-col>
             <v-col cols="12" sm="6">
               <v-text-field v-model="form.icon" label="Иконка (MDI)" variant="outlined" rounded="lg" density="comfortable"
-                placeholder="mdi-tent" />
+                            placeholder="mdi-tent" />
             </v-col>
             <v-col cols="12" sm="4">
               <v-text-field v-model.number="form.pricePerDay" label="Цена/день ($)" type="number"
@@ -429,12 +431,15 @@ onMounted(fetchAll);
   max-width: 1200px;
   margin: 0 auto;
 }
+
 .table-card {
   border: 1px solid rgba(0, 0, 0, 0.06);
 }
+
 .dialog-header {
   background: linear-gradient(135deg, rgba(103, 58, 183, 0.03), rgba(40, 53, 147, 0.05));
 }
+
 .services-table :deep(th) {
   font-size: 0.75rem !important;
   font-weight: 600 !important;

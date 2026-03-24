@@ -142,14 +142,6 @@ if (!isLoginPage.value && !isPublicPage.value) {
           <div v-if="!rail" class="sidebar-section-label">Аренда</div>
           <v-list density="compact" nav class="px-2">
             <v-list-item
-              prepend-icon="mdi-car-outline"
-              title="Автомобили"
-              to="/vehicles"
-              rounded="lg"
-              nav
-              class="sidebar-item"
-            />
-            <v-list-item
               prepend-icon="mdi-calendar-check-outline"
               title="Бронирования"
               to="/bookings"
