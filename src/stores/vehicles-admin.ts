@@ -7,10 +7,6 @@ export interface VehicleAdmin {
   brand: string;
   model: string;
   licensePlate: string;
-  bodyType: string;
-  drivetrain: string;
-  fuelType: string;
-  transmission: string;
   pricePerDay: number;
   minPricePerDay: number | null;
   image: string;
@@ -25,10 +21,6 @@ export interface VehicleFormData {
   brand: string;
   model: string;
   licensePlate: string;
-  bodyType: string;
-  drivetrain: string;
-  fuelType: string;
-  transmission: string;
   pricePerDay: number;
   minPricePerDay: number | null;
   image: string;
@@ -36,6 +28,7 @@ export interface VehicleFormData {
   status: string;
   locationId: number | null;
   pricingTemplateId: number | null;
+  attributes?: Record<string, string>;
 }
 
 export interface LocationItem {

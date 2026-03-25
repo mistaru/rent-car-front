@@ -45,21 +45,6 @@
         {{ vehicle.brand }} {{ vehicle.model }}
       </h3>
 
-      <div class="d-flex flex-wrap ga-2 mb-3">
-        <v-chip size="x-small" variant="tonal" color="grey-darken-1" prepend-icon="mdi-car">
-          {{ vehicle.bodyType }}
-        </v-chip>
-        <v-chip size="x-small" variant="tonal" color="grey-darken-1" prepend-icon="mdi-steering">
-          {{ vehicle.drivetrain }}
-        </v-chip>
-        <v-chip size="x-small" variant="tonal" color="grey-darken-1" prepend-icon="mdi-gas-station">
-          {{ vehicle.fuelType }}
-        </v-chip>
-        <v-chip size="x-small" variant="tonal" color="grey-darken-1" prepend-icon="mdi-cog">
-          {{ vehicle.transmission }}
-        </v-chip>
-      </div>
-
       <v-spacer />
 
       <div class="d-flex align-center justify-space-between mt-auto">

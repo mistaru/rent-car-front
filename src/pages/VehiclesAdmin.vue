@@ -5,6 +5,7 @@ import type { VehicleAdmin, VehicleFormData, BlockedPeriod, CreateBlockedPeriodD
 import ModalDialog from '@/components/UserModal.vue';
 import CarImageCarousel from '@/components/rental/CarImageCarousel.vue';
 import { BASE_URL } from '@/axios/api';
+import api from '@/axios/api';
 
 const store = useVehiclesAdminStore();
 
@@ -52,10 +53,6 @@ const emptyForm = (): VehicleFormData => ({
   brand: '',
   model: '',
   licensePlate: '',
-  bodyType: '',
-  drivetrain: 'AWD',
-  fuelType: 'Gasoline',
-  transmission: 'Automatic',
   pricePerDay: 0,
   minPricePerDay: null,
   image: '',
@@ -67,14 +64,36 @@ const emptyForm = (): VehicleFormData => ({
 
 const form = ref<VehicleFormData>(emptyForm());
 
+const vehicleAttributes = ref<Array<{
+  id: number; code: string; name: string; valueType: string;
+  possibleValues: string[]; filterable: boolean; active: boolean;
+}>>([]);
+const attributeValues = ref<Record<string, string>>({});
+
+// Загрузка справочника атрибутов
+const fetchAttributes = async () => {
+  try {
+    vehicleAttributes.value = await api.get('/api/v1/vehicle-attributes');
+  } catch (e) {
+    console.error('fetchAttributes error:', e);
+  }
+};
+
+// Загрузка значений атрибутов для конкретного авто
+const fetchAttributeValues = async (vehicleId: number) => {
+  try {
+    attributeValues.value = await api.get(`/api/v1/vehicle-attributes/vehicle/${vehicleId}`);
+  } catch (e) {
+    attributeValues.value = {};
+  }
+};
+
 const headers = [
   { title: 'ID', key: 'id', width: '60px' },
   { title: 'Фото', key: 'image', width: '70px', sortable: false },
   { title: 'Марка / Модель', key: 'brand' },
   { title: 'Гос. номер', key: 'licensePlate' },
   { title: 'Класс', key: 'carClass' },
-  { title: 'Тип кузова', key: 'bodyType' },
-  { title: 'Привод', key: 'drivetrain', width: '90px' },
   { title: 'Цена/день', key: 'pricePerDay', align: 'end' as const },
   { title: 'Статус', key: 'status', align: 'center' as const },
   { title: '', key: 'actions', sortable: false, width: '160px', align: 'center' as const },
@@ -95,11 +114,8 @@ const statusConfig: Record<string, { color: string; icon: string; label: string 
   unavailable: { color: 'error', icon: 'mdi-close-circle', label: 'Недоступен' },
 };
 
-const drivetrainOptions = ['AWD', '2WD', '4WD'];
-const fuelOptions = ['Gasoline', 'Diesel', 'Electric', 'Hybrid'];
-const transmissionOptions = ['Automatic', 'Manual'];
-const bodyTypeOptions = ['Sedan', 'SUV', 'Coupe', 'Hatchback', 'Wagon', 'Convertible', 'Van', 'Pickup'];
 const carClassOptions = ['Economy', 'Comfort', 'Business', 'Premium', 'Luxury Sedan', 'Sports Car', 'SUV', 'Electric', 'Off-Road'];
+
 const formStatusOptions = [
   { title: 'Доступен', value: 'available' },
   { title: 'Зарезервирован', value: 'reserved' },
@@ -203,6 +219,7 @@ const openCreate = () => {
   isEditing.value = false;
   selectedVehicle.value = null;
   form.value = emptyForm();
+  attributeValues.value = {};
   if (store.locations.length > 0) {
     form.value.locationId = store.locations[0].id;
   }
@@ -217,10 +234,6 @@ const openEdit = (vehicle: VehicleAdmin) => {
     brand: vehicle.brand,
     model: vehicle.model,
     licensePlate: vehicle.licensePlate || '',
-    bodyType: vehicle.bodyType || '',
-    drivetrain: vehicle.drivetrain || 'AWD',
-    fuelType: vehicle.fuelType || 'Gasoline',
-    transmission: vehicle.transmission || 'Automatic',
     pricePerDay: vehicle.pricePerDay,
     minPricePerDay: vehicle.minPricePerDay,
     image: vehicle.image || '',
@@ -230,6 +243,7 @@ const openEdit = (vehicle: VehicleAdmin) => {
     pricingTemplateId: vehicle.pricingTemplateId,
   };
   store.fetchImages(vehicle.id);
+  fetchAttributeValues(vehicle.id);
   formDialog.value = true;
 };
 
@@ -240,16 +254,21 @@ const openDelete = (vehicle: VehicleAdmin) => {
 
 const saveVehicle = async () => {
   if (isEditing.value && selectedVehicle.value) {
-    // Сначала удаляем помеченные фото
     await Promise.all(
       pendingDeleteImageIds.value.map(id =>
         store.deleteImage(id, selectedVehicle.value!.id)
       )
     );
     pendingDeleteImageIds.value = [];
-    await store.updateVehicle(selectedVehicle.value.id, form.value);
+    await store.updateVehicle(selectedVehicle.value.id, {
+      ...form.value,
+      attributes: { ...attributeValues.value },
+    });
   } else {
-    await store.createVehicle(form.value);
+    await store.createVehicle({
+      ...form.value,
+      attributes: { ...attributeValues.value },
+    });
   }
   formDialog.value = false;
 };
@@ -289,7 +308,10 @@ const carouselImages = computed(() => {
     .map(img => BASE_URL + img.url);
 });
 
-onMounted(fetchData);
+onMounted(async () => {
+  await fetchData();
+  await fetchAttributes();
+});
 </script>
 
 <template>
@@ -427,7 +449,6 @@ onMounted(fetchData);
         <template #item.brand="{ item }">
           <div>
             <div class="text-body-2 font-weight-bold">{{ item.brand }} {{ item.model }}</div>
-            <div class="text-caption text-medium-emphasis">{{ item.fuelType }} · {{ item.transmission }}</div>
           </div>
         </template>
 
@@ -571,50 +592,6 @@ onMounted(fetchData);
               />
             </v-col>
 
-            <!-- Body Type & Drivetrain -->
-            <v-col cols="12" sm="6">
-              <v-select
-                v-model="form.bodyType"
-                :items="bodyTypeOptions"
-                label="Тип кузова"
-                variant="outlined"
-                rounded="lg"
-                density="comfortable"
-              />
-            </v-col>
-            <v-col cols="12" sm="6">
-              <v-select
-                v-model="form.drivetrain"
-                :items="drivetrainOptions"
-                label="Привод"
-                variant="outlined"
-                rounded="lg"
-                density="comfortable"
-              />
-            </v-col>
-
-            <!-- Fuel & Transmission -->
-            <v-col cols="12" sm="6">
-              <v-select
-                v-model="form.fuelType"
-                :items="fuelOptions"
-                label="Топливо"
-                variant="outlined"
-                rounded="lg"
-                density="comfortable"
-              />
-            </v-col>
-            <v-col cols="12" sm="6">
-              <v-select
-                v-model="form.transmission"
-                :items="transmissionOptions"
-                label="КПП"
-                variant="outlined"
-                rounded="lg"
-                density="comfortable"
-              />
-            </v-col>
-
             <!-- Price -->
             <v-col cols="12" sm="6">
               <v-text-field
@@ -654,6 +631,75 @@ onMounted(fetchData);
                 rounded="lg"
                 density="comfortable"
               />
+            </v-col>
+
+            <!-- Динамические характеристики -->
+            <v-col cols="12" v-if="vehicleAttributes.length">
+              <v-divider class="my-2" />
+              <div class="detail-section__title mb-3">
+                <v-icon size="16" color="primary">mdi-tune-variant</v-icon>
+                Характеристики
+              </div>
+              <v-row dense>
+                <v-col
+                  v-for="attr in vehicleAttributes.filter(a => a.active)"
+                  :key="attr.code"
+                  cols="12"
+                  sm="6"
+                >
+                  <!-- ENUM → v-select -->
+                  <v-select
+                    v-if="attr.valueType === 'ENUM'"
+                    v-model="attributeValues[attr.code]"
+                    :items="attr.possibleValues"
+                    :label="attr.name"
+                    variant="outlined"
+                    rounded="lg"
+                    density="comfortable"
+                    clearable
+                    hide-details="auto"
+                    class="mb-1"
+                  />
+                  <!-- BOOLEAN → v-select да/нет -->
+                  <v-select
+                    v-else-if="attr.valueType === 'BOOLEAN'"
+                    v-model="attributeValues[attr.code]"
+                    :items="[{ title: 'Да', value: 'true' }, { title: 'Нет', value: 'false' }]"
+                    item-title="title"
+                    item-value="value"
+                    :label="attr.name"
+                    variant="outlined"
+                    rounded="lg"
+                    density="comfortable"
+                    clearable
+                    hide-details="auto"
+                    class="mb-1"
+                  />
+                  <!-- NUMBER → number input -->
+                  <v-text-field
+                    v-else-if="attr.valueType === 'NUMBER'"
+                    v-model="attributeValues[attr.code]"
+                    :label="attr.name"
+                    type="number"
+                    variant="outlined"
+                    rounded="lg"
+                    density="comfortable"
+                    hide-details="auto"
+                    class="mb-1"
+                  />
+                  <!-- TEXT → text input -->
+                  <v-text-field
+                    v-else
+                    v-model="attributeValues[attr.code]"
+                    :label="attr.name"
+                    variant="outlined"
+                    rounded="lg"
+                    density="comfortable"
+                    hide-details="auto"
+                    class="mb-1"
+                  />
+                </v-col>
+              </v-row>
             </v-col>
 
             <!-- Image URL -->

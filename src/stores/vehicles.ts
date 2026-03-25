@@ -6,10 +6,6 @@ export interface Vehicle {
   id: number;
   brand: string;
   model: string;
-  bodyType: string;
-  drivetrain: 'AWD' | '2WD' | '4WD';
-  fuelType: 'Gasoline' | 'Diesel' | 'Electric' | 'Hybrid';
-  transmission: 'Automatic' | 'Manual';
   pricePerDay: number;
   minPricePerDay: number | null;
   image: string;
