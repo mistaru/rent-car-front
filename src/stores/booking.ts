@@ -75,7 +75,7 @@ export const useBookingStore = defineStore('booking', () => {
 
   const addons = ref<AddonOption[]>([]);
 
-  const paymentMethod = ref<PaymentMethod>('online');
+  const paymentMethod = ref<PaymentMethod>('delivery');
   const submitting = ref(false);
   const submitted = ref(false);
   const locations = ref<LocationDto[]>([]);
@@ -264,9 +264,14 @@ export const useBookingStore = defineStore('booking', () => {
 
   async function processPayment(bookingId: number, transactionId: string) {
     if (!bookingId) throw new Error('Booking ID is required for payment processing');
+    const body = {
+      bookingId: bookingId,
+      transactionId: transactionId,
+      success: true,
+    };
     return await api.post<{id: number; bookingId: number; method: string;
       status: string; amount: number; transactionId: string; createdAt: string;}>
-    (`/api/v1/payments/process`,  JSON.stringify({ bookingId, transactionId, success: true }));
+    (`/api/v1/payments/process`, body);
   }
 
   async function confirmBooking() {
@@ -302,7 +307,7 @@ export const useBookingStore = defineStore('booking', () => {
     bookingDetails.value = { pickupLocation: null, dropoffLocation: null, pickupDate: null, pickupTime: null, dropoffDate: null, dropoffTime: null };
     personalInfo.value = { fullName: '', email: '', phone: '', additionalInfo: '' };
     addons.value.forEach((a: AddonOption) => (a.selected = false));
-    paymentMethod.value = 'online';
+    paymentMethod.value = 'delivery';
     submitting.value = false;
     submitted.value = false;
   }
@@ -329,7 +334,6 @@ export const useBookingStore = defineStore('booking', () => {
     setBookingFromSearch,
     confirmBooking,
     reset,
-    // Новое:
     locations,
     fetchLocations,
     fetchVehicleById,

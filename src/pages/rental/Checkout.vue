@@ -13,17 +13,132 @@
     </div>
 
     <v-container>
-      <!-- Success Dialog -->
-      <v-dialog v-model="bookingStore.submitted" persistent max-width="500">
-        <v-card rounded="xl" class="pa-6 text-center">
-          <v-icon size="64" color="success" class="mb-4">mdi-check-circle</v-icon>
-          <h2 class="text-h5 font-weight-bold mb-2">Booking Confirmed!</h2>
-          <p class="text-body-1 text-medium-emphasis mb-6">
-            Your reservation has been successfully placed. You'll receive a confirmation email shortly.
-          </p>
-          <v-btn color="primary" rounded="lg" size="large" block @click="goToVehicles">
-            Back to Catalog
-          </v-btn>
+      <v-dialog v-model="bookingStore.submitted" persistent max-width="520">
+        <v-card rounded="xl" class="pa-2 text-center">
+          <v-card-text class="pa-8">
+            <div class="success-icon-wrapper mb-5">
+              <v-icon size="72" color="success">mdi-check-circle</v-icon>
+            </div>
+            <h2 class="text-h5 font-weight-bold mb-2">Booking Request Sent!</h2>
+            <p class="text-body-1 text-medium-emphasis mb-4">
+              Your request has been successfully submitted.
+            </p>
+
+            <v-alert type="success" variant="tonal" rounded="lg" class="text-left mb-4" density="compact">
+              <div class="text-body-2">
+                A confirmation email has been sent to
+                <strong>{{ bookingStore.personalInfo.email }}</strong>.
+                Please check your inbox.
+              </div>
+            </v-alert>
+
+            <v-card variant="tonal" color="grey-lighten-3" rounded="lg" class="pa-4 text-left mb-5">
+              <div class="text-caption text-medium-emphasis mb-2 font-weight-bold text-uppercase">
+                What happens next?
+              </div>
+              <div class="d-flex align-start ga-2 mb-2">
+                <v-icon size="16" color="primary" class="mt-0">mdi-clock-outline</v-icon>
+                <span class="text-body-2">Our managers will review your request and confirm it shortly.</span>
+              </div>
+              <div class="d-flex align-start ga-2 mb-2">
+                <v-icon size="16" color="primary">mdi-email-outline</v-icon>
+                <span class="text-body-2">You'll receive an email once your booking status changes.</span>
+              </div>
+              <div class="d-flex align-start ga-2">
+                <v-icon size="16" color="success">mdi-whatsapp</v-icon>
+                <span class="text-body-2">
+            Questions? Contact us:<br>
+            <a href="mailto:admin@ironhorseasia.com" class="text-primary">admin@ironhorseasia.com</a>
+            &nbsp;·&nbsp;
+            <a href="https://wa.me/996500000123" target="_blank" class="text-primary">+996 500 000 123</a>
+          </span>
+              </div>
+            </v-card>
+
+            <v-btn color="primary" rounded="lg" size="large" block @click="goToVehicles">
+              <v-icon start>mdi-car-multiple</v-icon>
+              Back to Catalog
+            </v-btn>
+          </v-card-text>
+        </v-card>
+      </v-dialog>
+
+      <!-- ─── Error Snackbar ─── -->
+      <v-snackbar
+        v-model="errorSnackbar"
+        color="error"
+        rounded="lg"
+        timeout="6000"
+        location="top"
+      >
+        <v-icon start>mdi-alert-circle</v-icon>
+        {{ bookingError }}
+        <template #actions>
+          <v-btn variant="text" @click="errorSnackbar = false">Close</v-btn>
+        </template>
+      </v-snackbar>
+
+      <!-- ─── Confirmation Dialog ─── -->
+      <v-dialog v-model="confirmDialog" max-width="480" persistent>
+        <v-card rounded="xl" class="pa-2">
+          <v-card-text class="pa-6">
+            <div class="d-flex align-center ga-3 mb-4">
+              <v-avatar color="warning" variant="tonal" size="48" rounded="lg">
+                <v-icon size="26">mdi-alert-circle-outline</v-icon>
+              </v-avatar>
+              <div>
+                <div class="text-subtitle-1 font-weight-bold">Before you confirm</div>
+                <div class="text-caption text-medium-emphasis">Please review your details</div>
+              </div>
+            </div>
+
+            <v-alert type="info" variant="tonal" rounded="lg" class="mb-4" density="compact">
+              Please check your contact information. We will get back to you shortly to confirm your booking.
+            </v-alert>
+
+            <!-- Summary -->
+            <div class="confirm-summary pa-3 rounded-lg mb-4">
+              <div class="d-flex justify-space-between mb-1">
+                <span class="text-caption text-medium-emphasis">Name</span>
+                <span class="text-body-2 font-weight-medium">{{ bookingStore.personalInfo.fullName }}</span>
+              </div>
+              <div class="d-flex justify-space-between mb-1">
+                <span class="text-caption text-medium-emphasis">Email</span>
+                <span class="text-body-2 font-weight-medium">{{ bookingStore.personalInfo.email }}</span>
+              </div>
+              <div class="d-flex justify-space-between mb-1">
+                <span class="text-caption text-medium-emphasis">Phone</span>
+                <span class="text-body-2 font-weight-medium">{{ bookingStore.personalInfo.phone }}</span>
+              </div>
+              <v-divider class="my-2" />
+              <div class="d-flex justify-space-between">
+                <span class="text-caption text-medium-emphasis">Total</span>
+                <span class="text-body-2 font-weight-bold text-primary">${{ bookingStore.totalAmount }}</span>
+              </div>
+            </div>
+          </v-card-text>
+
+          <v-card-actions class="px-6 pb-5 pt-0 d-flex ga-3">
+            <v-btn
+              variant="tonal"
+              rounded="lg"
+              flex="1"
+              @click="confirmDialog = false"
+            >
+              Go Back
+            </v-btn>
+            <v-btn
+              color="primary"
+              variant="flat"
+              rounded="lg"
+              flex="1"
+              :loading="bookingStore.submitting"
+              @click="handleConfirmBooking"
+            >
+              <v-icon start>mdi-check-circle</v-icon>
+              Yes, Confirm
+            </v-btn>
+          </v-card-actions>
         </v-card>
       </v-dialog>
 
@@ -288,49 +403,49 @@
           </v-card>
 
           <!-- Step 4: Payment Method -->
-          <v-card elevation="0" rounded="xl" class="mb-4 checkout-card">
-            <v-card-title class="d-flex align-center ga-3 pa-5 pb-3">
-              <v-avatar color="primary" size="32">
-                <span class="text-body-2 font-weight-bold text-white">4</span>
-              </v-avatar>
-              <span class="text-subtitle-1 font-weight-bold">Payment Method</span>
-            </v-card-title>
-            <v-card-text class="pa-5 pt-0">
-              <v-radio-group v-model="bookingStore.paymentMethod" hide-details>
-                <v-card
-                  :class="['payment-option mb-3', { 'payment-option--selected': bookingStore.paymentMethod === 'online' }]"
-                  elevation="0"
-                  rounded="xl"
-                  @click="bookingStore.paymentMethod = 'online'"
-                >
-                  <v-card-text class="d-flex align-center ga-3 pa-4">
-                    <v-radio value="online" color="primary" hide-details />
-                    <v-icon color="primary">mdi-credit-card</v-icon>
-                    <div>
-                      <div class="text-subtitle-2 font-weight-bold">Pay Online</div>
-                      <div class="text-caption text-medium-emphasis">Card / Crypto</div>
-                    </div>
-                  </v-card-text>
-                </v-card>
+<!--          <v-card elevation="0" rounded="xl" class="mb-4 checkout-card">-->
+<!--            <v-card-title class="d-flex align-center ga-3 pa-5 pb-3">-->
+<!--              <v-avatar color="primary" size="32">-->
+<!--                <span class="text-body-2 font-weight-bold text-white">4</span>-->
+<!--              </v-avatar>-->
+<!--              <span class="text-subtitle-1 font-weight-bold">Payment Method</span>-->
+<!--            </v-card-title>-->
+<!--            <v-card-text class="pa-5 pt-0">-->
+<!--              <v-radio-group v-model="bookingStore.paymentMethod" hide-details>-->
+<!--                <v-card-->
+<!--                  :class="['payment-option mb-3', { 'payment-option&#45;&#45;selected': bookingStore.paymentMethod === 'online' }]"-->
+<!--                  elevation="0"-->
+<!--                  rounded="xl"-->
+<!--                  @click="bookingStore.paymentMethod = 'online'"-->
+<!--                >-->
+<!--                  <v-card-text class="d-flex align-center ga-3 pa-4">-->
+<!--                    <v-radio value="online" color="primary" hide-details />-->
+<!--                    <v-icon color="primary">mdi-credit-card</v-icon>-->
+<!--                    <div>-->
+<!--                      <div class="text-subtitle-2 font-weight-bold">Pay Online</div>-->
+<!--                      <div class="text-caption text-medium-emphasis">Card / Crypto</div>-->
+<!--                    </div>-->
+<!--                  </v-card-text>-->
+<!--                </v-card>-->
 
-                <v-card
-                  :class="['payment-option', { 'payment-option--selected': bookingStore.paymentMethod === 'delivery' }]"
-                  elevation="0"
-                  rounded="xl"
-                  @click="bookingStore.paymentMethod = 'delivery'"
-                >
-                  <v-card-text class="d-flex align-center ga-3 pa-4">
-                    <v-radio value="delivery" color="primary" hide-details />
-                    <v-icon color="primary">mdi-cash</v-icon>
-                    <div>
-                      <div class="text-subtitle-2 font-weight-bold">Pay on Delivery</div>
-                      <div class="text-caption text-medium-emphasis">Cash or card on pick-up</div>
-                    </div>
-                  </v-card-text>
-                </v-card>
-              </v-radio-group>
-            </v-card-text>
-          </v-card>
+<!--                <v-card-->
+<!--                  :class="['payment-option', { 'payment-option&#45;&#45;selected': bookingStore.paymentMethod === 'delivery' }]"-->
+<!--                  elevation="0"-->
+<!--                  rounded="xl"-->
+<!--                  @click="bookingStore.paymentMethod = 'delivery'"-->
+<!--                >-->
+<!--                  <v-card-text class="d-flex align-center ga-3 pa-4">-->
+<!--                    <v-radio value="delivery" color="primary" hide-details />-->
+<!--                    <v-icon color="primary">mdi-cash</v-icon>-->
+<!--                    <div>-->
+<!--                      <div class="text-subtitle-2 font-weight-bold">Pay on Delivery</div>-->
+<!--                      <div class="text-caption text-medium-emphasis">Cash or card on pick-up</div>-->
+<!--                    </div>-->
+<!--                  </v-card-text>-->
+<!--                </v-card>-->
+<!--              </v-radio-group>-->
+<!--            </v-card-text>-->
+<!--          </v-card>-->
         </v-col>
 
         <!-- Right Column: Summary -->
@@ -480,10 +595,10 @@
                   class="mt-2 confirm-btn"
                   :disabled="!bookingStore.canSubmit"
                   :loading="bookingStore.submitting"
-                  @click="bookingStore.confirmBooking()"
+                  @click="openConfirmDialog"
                 >
-                  <v-icon start>mdi-check-circle</v-icon>
-                  Confirm and Book
+                <v-icon start>mdi-check-circle</v-icon>
+                Confirm and Request Booking
                 </v-btn>
               </v-card-text>
             </v-card>
@@ -524,21 +639,15 @@ import { BASE_URL } from '@/axios/api';
 const vehicleImages = computed((): string[] => {
   const v = bookingStore.selectedVehicle as any;
   if (!v) return [];
-  console.log("Selected vehicle: ", v);
 
   if (Array.isArray(v.images) && v.images.length > 0) {
     return v.images.map((p: any) => {
       const url = typeof p === 'string' ? p : p.url;
       if (!url) return '';
-      const curla = url.startsWith('http') ? url : BASE_URL + url;
-      console.log('BASE_URL ' + BASE_URL);
-      console.log('URL ROOT ' + url);
-      console.log('URL IMAGE ' + curla);
       return url.startsWith('http') ? url : BASE_URL + url;
     }).filter(Boolean);
   }
 
-  console.log("Fallback to single image string: ", v);
   if (v.image) return [v.image];
   return [];
 });
@@ -577,6 +686,25 @@ const rules = {
   phone: (v: string) => v?.trim().length >= 7 || 'Phone number must be at least 7 characters',
   minLength: (min: number) => (v: string) => v?.trim().length >= min || `Minimum ${min} characters`,
 };
+
+const confirmDialog = ref(false);
+const bookingError = ref('');
+const errorSnackbar = ref(false);
+
+function openConfirmDialog() {
+  confirmDialog.value = true;
+}
+
+async function handleConfirmBooking() {
+  confirmDialog.value = false;
+  bookingError.value = '';
+  try {
+    await bookingStore.confirmBooking();
+  } catch (e: any) {
+    bookingError.value = e?.message || 'Something went wrong. Please try again.';
+    errorSnackbar.value = true;
+  }
+}
 
 function goBack() {
   router.push({ name: 'Vehicles' });
@@ -660,6 +788,20 @@ onBeforeUnmount(() => {
   text-transform: none;
   font-weight: 700;
   letter-spacing: 0.5px;
+}
+
+.confirm-summary {
+  background: rgba(0, 0, 0, 0.03);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.success-icon-wrapper {
+  animation: pop-in 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes pop-in {
+  from { transform: scale(0.5); opacity: 0; }
+  to   { transform: scale(1);   opacity: 1; }
 }
 
 .ls-wide {
