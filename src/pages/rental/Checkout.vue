@@ -63,20 +63,6 @@
         </v-card>
       </v-dialog>
 
-      <!-- ─── Error Snackbar ─── -->
-      <v-snackbar
-        v-model="errorSnackbar"
-        color="error"
-        rounded="lg"
-        timeout="6000"
-        location="top"
-      >
-        <v-icon start>mdi-alert-circle</v-icon>
-        {{ bookingError }}
-        <template #actions>
-          <v-btn variant="text" @click="errorSnackbar = false">Close</v-btn>
-        </template>
-      </v-snackbar>
 
       <!-- ─── Confirmation Dialog ─── -->
       <v-dialog v-model="confirmDialog" max-width="480" persistent>
@@ -230,6 +216,7 @@
                     density="comfortable"
                     rounded="lg"
                     type="date"
+                    :min="minPickupDate"
                     :rules="[rules.required]"
                     persistent-placeholder
                   />
@@ -255,6 +242,7 @@
                     density="comfortable"
                     rounded="lg"
                     type="date"
+                    :min="minDropoffDate"
                     :rules="[rules.required]"
                     persistent-placeholder
                   />
@@ -612,7 +600,7 @@
 </template>
 
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, computed, watch } from 'vue';
+import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useBookingStore } from '@/stores/booking';
 import type { AddonOption } from '@/stores/booking';
@@ -624,6 +612,14 @@ const route = useRoute();
 const bookingStore = useBookingStore();
 
 const selectedAddons = computed(() => bookingStore.addons.filter((a: AddonOption) => a.selected));
+
+const minDropoffDate = computed(() => {
+  return bookingStore.bookingDetails.pickupDate || new Date().toISOString().split('T')[0];
+});
+
+const minPickupDate = computed(() => {
+  return new Date().toISOString().split('T')[0];
+});
 
 const pickupLocationName = computed(() => {
   const id = bookingStore.bookingDetails.pickupLocation;
@@ -679,6 +675,13 @@ watch(
   { deep: true }
 );
 
+watch(() => bookingStore.bookingDetails.pickupDate, (newPickup) => {
+  const dropoff = bookingStore.bookingDetails.dropoffDate;
+  if (newPickup && dropoff && dropoff < newPickup) {
+    bookingStore.bookingDetails.dropoffDate = null;
+  }
+});
+
 const rules = {
   required: (v: string) => !!v?.trim() || 'This field is required',
   requiredSelect: (v: any) => v !== null && v !== undefined || 'Please select a location',
@@ -688,8 +691,8 @@ const rules = {
 };
 
 const confirmDialog = ref(false);
-const bookingError = ref('');
-const errorSnackbar = ref(false);
+// const bookingError = ref('');
+// const errorSnackbar = ref(false);
 
 function openConfirmDialog() {
   confirmDialog.value = true;
@@ -697,12 +700,10 @@ function openConfirmDialog() {
 
 async function handleConfirmBooking() {
   confirmDialog.value = false;
-  bookingError.value = '';
   try {
     await bookingStore.confirmBooking();
   } catch (e: any) {
-    bookingError.value = e?.message || 'Something went wrong. Please try again.';
-    errorSnackbar.value = true;
+    // Error is handled globally by the API interceptor
   }
 }
 

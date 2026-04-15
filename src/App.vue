@@ -158,6 +158,14 @@ if (!isLoginPage.value && !isPublicPage.value) {
               class="sidebar-item"
             />
             <v-list-item
+              prepend-icon="mdi-calendar-month-outline"
+              title="Табличный - Календарь"
+              to="/bookings-table-calendar"
+              rounded="lg"
+              nav
+              class="sidebar-item"
+            />
+            <v-list-item
               prepend-icon="mdi-car-cog"
               title="Управление авто"
               to="/vehicles-admin"

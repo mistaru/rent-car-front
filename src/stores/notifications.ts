@@ -4,7 +4,7 @@ import { ref } from 'vue';
 export const useNotificationStore = defineStore('notifications', () => {
   const notifications = ref<{ id: number; type: string; message: string }[]>([]);
 
-  const addNotification = (type: 'success' | 'error' | 'warning', message: string, timeout = 4000) => {
+  const addNotification = (type: 'success' | 'error' | 'warning', message: string, timeout = 5000) => {
     const existingNotif = notifications.value.find(notif => notif.message === message);
 
     if (existingNotif) {

@@ -83,6 +83,11 @@ const staticRoutes: RouteRecordRaw[] = [
     component: () => import('@/pages/BookingsCalendar.vue'),
   },
   {
+    path: '/bookings-table-calendar',
+    name: 'BookingsTableCalendar',
+    component: () => import('@/pages/BookingsTableCalendar.vue'),
+  },
+  {
     path: '/:catchAll(.*)',
     name: 'NotFound',
     component: () => import('@/pages/NotFound.vue'),

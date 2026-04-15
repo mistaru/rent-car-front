@@ -4,8 +4,8 @@ import router from '../router/index';
 const origin = window.location.origin;
 const dnsMapper:Record<string, string> = {
   'localhost': 'http://localhost:8081/api',
-  'test': 'http://178.104.61.164:8080/api',
-  'http://178.104.61.164:8080/api': 'http://178.104.61.164:8080/api',
+  'test': 'http://localhost:8081/',
+  'http://localhost:8081/': 'http://localhost:8081/',
 };
 const getBaseUrl = () => {
   const matchedKey = Object.keys(dnsMapper).find(key => origin.includes(key));
@@ -37,15 +37,14 @@ axiosIns.interceptors.response.use(
     return response;
   },
   err => {
-    return new Promise((_, reject) => {
-      if ([401, 403].includes(err?.response?.status)) {
-        const store = useAppStore();
-        store.logout();
-        router.push('/login');
-      } else {
-        reject(err);
-      }
-    });
+    const status = err?.response?.status;
+    if ([401, 403].includes(status)) {
+      const store = useAppStore();
+      store.logout();
+      router.push('/login');
+    }
+
+    return Promise.reject(err);
   }
 );
 

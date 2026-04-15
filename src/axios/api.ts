@@ -77,30 +77,49 @@ export class ApiError extends Error {
     this.name = 'ApiError';
   }
 }
+// ─── Global error handler ────────────────────────────────────────────────────
+
+import { useNotificationStore } from '@/stores/notifications';
+
+function notifyError(message: string) {
+  try {
+    const { addNotification } = useNotificationStore();
+    addNotification('error', message);
+  } catch {
+    // store not ready yet (e.g. before Pinia is installed) — silently ignore
+    console.error('[API]', message);
+  }
+}
 
 // ─── Core Client ─────────────────────────────────────────────────────────────
 
 async function request<T>(method: string, path: string, options: RequestOptions = {}): Promise<T> {
   const { params, body, headers, ...rest } = options;
 
-  const res = await fetch(buildUrl(path, params), {
-    method,
-    // headers: {
-    //   'Content-Type': 'application/json',
-    //   Accept: 'application/json',
-    //   ...headers,
-    // },
-    // body: body !== undefined ? JSON.stringify(body) : undefined,
-    headers: {
-      ...(body instanceof FormData ? {} : { 'Content-Type': 'application/json' }),
-      Accept: 'application/json',
-      ...headers,
-    },
-    body: body instanceof FormData ? body : (body !== undefined ? JSON.stringify(body) : undefined),
-    ...rest,
-  });
+  let res: Response;
+  try {
+    res = await fetch(buildUrl(path, params), {
+      method,
+      headers: {
+        ...(body instanceof FormData ? {} : { 'Content-Type': 'application/json' }),
+        Accept: 'application/json',
+        ...headers,
+      },
+      body: body instanceof FormData ? body : (body !== undefined ? JSON.stringify(body) : undefined),
+      ...rest,
+    });
+  } catch (networkError: any) {
+    const msg = networkError?.message || 'Сервер недоступен. Проверьте подключение.';
+    notifyError(msg);
+    throw networkError;
+  }
 
-  return parseResponse<T>(res);
+  try {
+    return await parseResponse<T>(res);
+  } catch (apiError: any) {
+    notifyError(apiError?.message || `Ошибка сервера (${res.status})`);
+    throw apiError;
+  }
 }
 
 // ─── Public API ───────────────────────────────────────────────────────────────
