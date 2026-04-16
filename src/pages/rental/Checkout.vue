@@ -13,19 +13,19 @@
     </div>
 
     <v-container>
-      <v-dialog v-model="bookingStore.submitted" persistent max-width="520">
-        <v-card rounded="xl" class="pa-2 text-center">
-          <v-card-text class="pa-8">
+      <v-dialog v-model="bookingStore.submitted" persistent max-width="700">
+        <v-card rounded="xl" class="pa-4 text-center">
+          <v-card-text class="pa-10">
             <div class="success-icon-wrapper mb-5">
               <v-icon size="72" color="success">mdi-check-circle</v-icon>
             </div>
-            <h2 class="text-h5 font-weight-bold mb-2">Booking Request Sent!</h2>
-            <p class="text-body-1 text-medium-emphasis mb-4">
+            <h2 class="text-h4 font-weight-bold mb-3 text-black">Booking Request Sent!</h2>
+            <p class="text-body-1 text-black mb-5" style="font-size: 16px;">
               Your request has been successfully submitted.
             </p>
 
             <v-alert type="success" variant="tonal" rounded="lg" class="text-left mb-4" density="compact">
-              <div class="text-body-2">
+              <div class="text-body-1 text-black">
                 A confirmation email has been sent to
                 <strong>{{ bookingStore.personalInfo.email }}</strong>.
                 Please check your inbox.
@@ -33,20 +33,20 @@
             </v-alert>
 
             <v-card variant="tonal" color="grey-lighten-3" rounded="lg" class="pa-4 text-left mb-5">
-              <div class="text-caption text-medium-emphasis mb-2 font-weight-bold text-uppercase">
+              <div class="text-body-2 text-black mb-3 font-weight-bold text-uppercase">
                 What happens next?
               </div>
               <div class="d-flex align-start ga-2 mb-2">
                 <v-icon size="16" color="primary" class="mt-0">mdi-clock-outline</v-icon>
-                <span class="text-body-2">Our managers will review your request and confirm it shortly.</span>
+                <span class="text-body-1 text-black">Our managers will review your request and confirm it shortly.</span>
               </div>
               <div class="d-flex align-start ga-2 mb-2">
                 <v-icon size="16" color="primary">mdi-email-outline</v-icon>
-                <span class="text-body-2">You'll receive an email once your booking status changes.</span>
+                <span class="text-body-1 text-black">You'll receive an email once your booking status changes.</span>
               </div>
               <div class="d-flex align-start ga-2">
                 <v-icon size="16" color="success">mdi-whatsapp</v-icon>
-                <span class="text-body-2">
+                <span class="text-body-1 text-black">
             Questions? Contact us:<br>
             <a href="mailto:admin@ironhorseasia.com" class="text-primary">admin@ironhorseasia.com</a>
             &nbsp;·&nbsp;
@@ -55,7 +55,7 @@
               </div>
             </v-card>
 
-            <v-btn color="primary" rounded="lg" size="large" block @click="goToVehicles">
+            <v-btn color="primary" rounded="lg" size="x-large" block class="mt-4" @click="goToVehicles">
               <v-icon start>mdi-car-multiple</v-icon>
               Back to Catalog
             </v-btn>
@@ -811,5 +811,9 @@ onBeforeUnmount(() => {
 
 .leading-tight {
   line-height: 1.3;
+}
+
+.text-black {
+  color: #000 !important;
 }
 </style>
