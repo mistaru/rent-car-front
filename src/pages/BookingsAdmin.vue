@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import { useBookingsAdminStore } from '@/stores/bookings-admin';
-import type { BookingAdmin, UpdateBookingData, BookingHistoryItem } from '@/stores/bookings-admin';
+import type { BookingAdmin, UpdateBookingData, BookingHistoryItem, ServiceOptionItem } from '@/stores/bookings-admin';
 import ModalDialog from '@/components/UserModal.vue';
+import api from "@/axios/api";
 
 const store = useBookingsAdminStore();
 
@@ -23,6 +24,7 @@ const locations = ref<LocationItem[]>([]);
 // Форма редактирования
 const editForm = ref<UpdateBookingData>({});
 const editSaving = ref(false);
+const editAddOns = ref<Array<{ code: string; name: string; quantity: number; maxQuantity: number | null; pricePerDay: number }>>([]);
 const headers = [
   { title: '№', key: 'id', width: '60px' },
   { title: 'Автомобиль', key: 'vehicle' },
@@ -92,10 +94,10 @@ const fetchBookings = async () => {
   loading.value = true;
   try {
     await store.fetchAllBookings();
+    await store.fetchServiceOptions();
     // Загружаем локации для формы редактирования
     try {
-      const res = await fetch('http://localhost:8081/api/v1/locations');
-      if (res.ok) locations.value = await res.json();
+      locations.value = await api.get('/api/v1/locations');
     } catch (e) { /* ignore */ }
   } finally {
     loading.value = false;
@@ -144,6 +146,22 @@ const openEdit = (booking: BookingAdmin) => {
     customerAdditionalInfo: '',
     managerComment: '',
   };
+  // Build editAddOns from all available service options, marking selected ones
+  const existingMap = new Map(
+    (booking.addOns || []).map(a => [a.code, a.quantity])
+  );
+  editAddOns.value = store.serviceOptions.map(opt => {
+    const existingQty = existingMap.get(opt.code) || 0;
+    // Available for this booking = globally available + what this booking already holds
+    const available = opt.availableQuantity != null ? opt.availableQuantity + existingQty : null;
+    return {
+      code: opt.code,
+      name: opt.name,
+      quantity: existingQty,
+      maxQuantity: available,
+      pricePerDay: opt.pricePerDay,
+    };
+  });
   editDialog.value = true;
 };
 
@@ -151,9 +169,15 @@ const saveEdit = async () => {
   if (!selectedBooking.value) return;
   editSaving.value = true;
   try {
-    await store.updateBooking(selectedBooking.value.id, editForm.value);
+    // Include only selected addons (quantity > 0)
+    const addOns = editAddOns.value
+      .filter(a => a.quantity > 0)
+      .map(a => ({ code: a.code, quantity: a.quantity }));
+    await store.updateBooking(selectedBooking.value.id, { ...editForm.value, addOns });
     editDialog.value = false;
     selectedBooking.value = null;
+
+    await store.fetchServiceOptions();
   } catch (e) {
     // handled in store
   } finally {
@@ -603,8 +627,8 @@ onMounted(fetchBookings);
                       Дополнительные услуги
                     </div>
                     <div class="d-flex flex-wrap ga-2">
-                      <v-chip v-for="addon in selectedBooking.addOns" :key="addon" size="small" variant="tonal" color="primary" prepend-icon="mdi-check">
-                        {{ addon.replace(/_/g, ' ') }}
+                      <v-chip v-for="addon in selectedBooking.addOns" :key="addon.code" size="small" variant="tonal" color="primary" prepend-icon="mdi-check">
+                        {{ addon.name.replace(/_/g, ' ') }}{{ addon.quantity > 1 ? ` ×${addon.quantity}` : '' }}
                       </v-chip>
                     </div>
                   </div>
@@ -833,6 +857,59 @@ onMounted(fetchBookings);
                 density="comfortable"
               />
             </v-col>
+
+            <!-- Доп. услуги -->
+            <v-col cols="12" class="mb-1">
+              <div class="detail-section__title">
+                <v-icon size="16" color="primary">mdi-plus-box-multiple</v-icon>
+                Дополнительные услуги
+              </div>
+            </v-col>
+            <v-col cols="12">
+              <v-table density="compact" class="rounded-lg">
+                <thead>
+                  <tr>
+                    <th>Услуга</th>
+                    <th class="text-center" style="width: 80px">Цена/день</th>
+                    <th class="text-center" style="width: 140px">Количество</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="addon in editAddOns" :key="addon.code" :class="{ 'text-grey': addon.maxQuantity === 0 }">
+                    <td class="text-body-2">
+                      {{ addon.name }}
+                      <v-chip v-if="addon.maxQuantity === 0" size="x-small" color="grey" variant="tonal" class="ml-1">нет в наличии</v-chip>
+                      <span v-else-if="addon.maxQuantity != null" class="text-caption text-medium-emphasis ml-1">(доступно: {{ addon.maxQuantity }})</span>
+                    </td>
+                    <td class="text-center text-body-2">${{ addon.pricePerDay }}</td>
+                    <td class="text-center">
+                      <div class="d-flex align-center justify-center ga-1">
+                        <v-btn
+                          icon
+                          size="x-small"
+                          variant="text"
+                          :disabled="addon.quantity <= 0 || addon.maxQuantity === 0"
+                          @click="addon.quantity = Math.max(0, addon.quantity - 1)"
+                        >
+                          <v-icon size="16">mdi-minus</v-icon>
+                        </v-btn>
+                        <span class="text-body-2 font-weight-bold" style="min-width: 24px; text-align: center">{{ addon.quantity }}</span>
+                        <v-btn
+                          icon
+                          size="x-small"
+                          variant="text"
+                          :disabled="addon.maxQuantity != null && addon.quantity >= addon.maxQuantity"
+                          @click="addon.quantity++"
+                        >
+                          <v-icon size="16">mdi-plus</v-icon>
+                        </v-btn>
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </v-table>
+            </v-col>
+
             <v-col cols="12">
               <v-textarea
                 v-model="editForm.managerComment"

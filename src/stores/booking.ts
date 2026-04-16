@@ -27,6 +27,8 @@ export interface AddonOption {
   icon: string;
   pricePerDay: number;
   selected: boolean;
+  quantity: number;
+  maxQuantity: number | null; // null = unlimited (e.g. documents/delivery)
   category: string;
 }
 
@@ -45,7 +47,7 @@ export interface PriceBreakdown {
   pricePerDay: number;
   baseAmount: number;
   tierName: string | null;
-  addOnItems: Array<{ name: string; pricePerDay: number; total: number }>;
+  addOnItems: Array<{ name: string; code: string; pricePerDay: number; quantity: number; total: number }>;
   addOnsAmount: number;
   serviceFee: number;
   totalAmount: number;
@@ -87,6 +89,8 @@ export const useBookingStore = defineStore('booking', () => {
       const data = await api.get<Array<{
         id: number; code: string; name: string; description: string;
         category: string; icon: string; pricePerDay: number;
+        totalQuantity: number | null;
+        availableQuantity: number | null;
       }>>('/api/v1/service-options/active');
 
       addons.value = data.map(opt => ({
@@ -96,6 +100,8 @@ export const useBookingStore = defineStore('booking', () => {
         icon: opt.icon || 'mdi-plus-box',
         pricePerDay: opt.pricePerDay,
         selected: false,
+        quantity: 1,
+        maxQuantity: opt.availableQuantity ?? opt.totalQuantity,
         category: opt.category || 'OTHER',
       }));
     } catch (e) {
@@ -123,7 +129,7 @@ export const useBookingStore = defineStore('booking', () => {
     if (priceBreakdown.value) return priceBreakdown.value.addOnsAmount || 0;
     return addons.value
       .filter((a: AddonOption) => a.selected)
-      .reduce((sum: number, a: AddonOption) => sum + a.pricePerDay * rentalDays.value, 0);
+      .reduce((sum: number, a: AddonOption) => sum + a.pricePerDay * a.quantity * rentalDays.value, 0);
   });
 
   /** Доп. услуги, сгруппированные по категориям */
@@ -186,8 +192,12 @@ export const useBookingStore = defineStore('booking', () => {
     const addon = addons.value.find((a: AddonOption) => a.id === id);
     if (!addon) return;
 
+    // Prevent selecting if unavailable (maxQuantity === 0)
+    if (!addon.selected && addon.maxQuantity === 0) return;
+
     const wasSelected = addon.selected;
     addon.selected = !addon.selected;
+    if (!wasSelected) addon.quantity = 1;
 
     // DELIVERY — взаимоисключающие: при выборе одной delivery снимаются остальные
     if (addon.selected && addon.category === 'DELIVERY') {
@@ -195,6 +205,14 @@ export const useBookingStore = defineStore('booking', () => {
         .filter((a: AddonOption) => a.category === 'DELIVERY' && a.id !== id)
         .forEach((a: AddonOption) => (a.selected = false));
     }
+  }
+
+  function setAddonQuantity(id: string, qty: number) {
+    const addon = addons.value.find((a: AddonOption) => a.id === id);
+    if (!addon) return;
+    const max = addon.maxQuantity ?? 99;
+    addon.quantity = Math.max(1, Math.min(qty, max));
+    if (!addon.selected && addon.quantity >= 1) addon.selected = true;
   }
 
   function setVehicle(vehicle: Vehicle) {
@@ -226,20 +244,21 @@ export const useBookingStore = defineStore('booking', () => {
   async function calculatePrice() {
     if (!selectedVehicle.value) return;
     const days = rentalDays.value;
-    // addon.id is now the service option CODE from the API (e.g. 'ROOF_TENT')
-    const addOns = addons.value.filter(a => a.selected).map(a => a.id);
+    const selectedAddons = addons.value.filter(a => a.selected);
     const params = new URLSearchParams({
       days: String(days),
       currency: 'USD',
     });
-    addOns.forEach(a => params.append('addOns', a));
+    selectedAddons.forEach(a => {
+      params.append('addOns', a.id);
+      params.append('qty', String(a.quantity));
+    });
     priceBreakdown.value = await api.get<PriceBreakdown>(`/api/v1/pricing/calculate/vehicle/${selectedVehicle.value.id}?${params.toString()}`);
   }
 
   async function createBooking(customerId: number) {
     if (!selectedVehicle.value) throw new Error('No vehicle selected');
-    // addon.id is now the service option CODE from the API
-    const addOns = addons.value.filter(a => a.selected).map(a => a.id);
+    const selectedAddOns = addons.value.filter(a => a.selected).map(a => ({ code: a.id, quantity: a.quantity }));
     const body = {
       vehicleId: selectedVehicle.value.id,
       customerId,
@@ -248,7 +267,7 @@ export const useBookingStore = defineStore('booking', () => {
       pickupDate: bookingDetails.value.pickupDate,
       dropoffDate: bookingDetails.value.dropoffDate,
       paymentMethod: paymentMethod.value === 'online' ? 'ONLINE' : 'ON_DELIVERY',
-      addOns,
+      addOns: selectedAddOns,
       currency: 'USD',
     };
     return await api.post<{id : number;}>(`/api/v1/bookings`, body);
@@ -330,6 +349,7 @@ export const useBookingStore = defineStore('booking', () => {
     isBookingDetailsValid,
     canSubmit,
     toggleAddon,
+    setAddonQuantity,
     setVehicle,
     setBookingFromSearch,
     confirmBooking,

@@ -361,28 +361,66 @@
                     md="4"
                   >
                     <v-card
-                      :class="['addon-card', { 'addon-card--selected': addon.selected }]"
+                      :class="['addon-card', { 'addon-card--selected': addon.selected, 'addon-card--unavailable': addon.maxQuantity === 0 }]"
                       elevation="0"
                       rounded="xl"
-                      @click="bookingStore.toggleAddon(addon.id)"
                     >
                       <v-card-text class="pa-4 text-center">
                         <v-icon
-                          :color="addon.selected ? 'primary' : 'grey'"
+                          :color="addon.maxQuantity === 0 ? 'grey-lighten-1' : addon.selected ? 'primary' : 'grey'"
                           size="36"
                           class="mb-2"
+                          @click="bookingStore.toggleAddon(addon.id)"
                         >
                           {{ addon.icon }}
                         </v-icon>
-                        <h4 class="text-subtitle-2 font-weight-bold mb-1">{{ addon.title }}</h4>
-                        <p class="text-caption text-medium-emphasis mb-2">{{ addon.description }}</p>
+                        <h4
+                          :class="['text-subtitle-2 font-weight-bold mb-1', { 'text-grey-lighten-1': addon.maxQuantity === 0 }]"
+                          @click="bookingStore.toggleAddon(addon.id)"
+                        >{{ addon.title }}</h4>
+                        <p class="text-caption text-medium-emphasis mb-2" @click="bookingStore.toggleAddon(addon.id)">{{ addon.description }}</p>
                         <v-chip
+                          v-if="addon.maxQuantity === 0"
+                          size="small"
+                          color="grey-lighten-1"
+                          variant="tonal"
+                        >
+                          Unavailable
+                        </v-chip>
+                        <v-chip
+                          v-else
                           size="small"
                           :color="addon.selected ? 'primary' : 'grey-lighten-1'"
                           :variant="addon.selected ? 'elevated' : 'tonal'"
+                          @click="bookingStore.toggleAddon(addon.id)"
                         >
                           {{ addon.pricePerDay > 0 ? `+$${addon.pricePerDay}/day` : 'Free' }}
                         </v-chip>
+                        <!-- Quantity controls -->
+                        <div v-if="addon.selected && addon.maxQuantity !== 1" class="d-flex align-center justify-center ga-2 mt-3" @click.stop>
+                          <v-btn
+                            icon
+                            size="x-small"
+                            variant="tonal"
+                            color="primary"
+                            :disabled="addon.quantity <= 1"
+                            @click="bookingStore.setAddonQuantity(addon.id, addon.quantity - 1)"
+                          >
+                            <v-icon size="16">mdi-minus</v-icon>
+                          </v-btn>
+                          <span class="text-body-2 font-weight-bold" style="min-width: 24px; text-align: center">{{ addon.quantity }}</span>
+                          <v-btn
+                            icon
+                            size="x-small"
+                            variant="tonal"
+                            color="primary"
+                            :disabled="addon.maxQuantity != null && addon.quantity >= addon.maxQuantity"
+                            @click="bookingStore.setAddonQuantity(addon.id, addon.quantity + 1)"
+                          >
+                            <v-icon size="16">mdi-plus</v-icon>
+                          </v-btn>
+                          <span v-if="addon.maxQuantity" class="text-caption text-medium-emphasis">/ {{ addon.maxQuantity }}</span>
+                        </div>
                       </v-card-text>
                     </v-card>
                   </v-col>
@@ -768,6 +806,12 @@ onBeforeUnmount(() => {
 .addon-card--selected {
   border-color: #673ab7;
   background: rgba(103, 58, 183, 0.04);
+}
+
+.addon-card--unavailable {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
 }
 
 /* Payment options */

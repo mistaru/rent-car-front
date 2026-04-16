@@ -19,6 +19,8 @@ const selectedVehicle = ref<VehicleAdmin | null>(null);
 const selectedBlock = ref<BlockedPeriod | null>(null);
 const searchText = ref('');
 const statusFilter = ref('all');
+const dateFrom = ref('');
+const dateTo = ref('');
 const blockSaving = ref(false);
 const blockError = ref('');
 const pendingDeleteImageIds = ref<number[]>([]);
@@ -123,10 +125,29 @@ const formStatusOptions = [
   { title: 'Недоступен', value: 'unavailable' },
 ];
 
+/** Проверяет, заблокирован ли автомобиль в выбранном диапазоне дат */
+const isBlockedInRange = (vehicleId: number): boolean => {
+  if (!dateFrom.value || !dateTo.value) return false;
+  const from = new Date(dateFrom.value);
+  const to = new Date(dateTo.value);
+  return store.blockedPeriods.some(bp => {
+    if (bp.vehicleId !== vehicleId) return false;
+    const bpStart = new Date(bp.startDate);
+    const bpEnd = new Date(bp.endDate);
+    return bpStart <= to && bpEnd >= from;
+  });
+};
+
+/** Эффективный статус авто с учётом блокировок в выбранном диапазоне */
+const effectiveStatus = (v: VehicleAdmin): string => {
+  if (dateFrom.value && dateTo.value && isBlockedInRange(v.id)) return 'unavailable';
+  return v.status;
+};
+
 const filteredVehicles = computed(() => {
   let result = store.vehicles;
   if (statusFilter.value !== 'all') {
-    result = result.filter(v => v.status === statusFilter.value);
+    result = result.filter(v => effectiveStatus(v) === statusFilter.value);
   }
   if (searchText.value.trim()) {
     const q = searchText.value.toLowerCase();
@@ -140,9 +161,17 @@ const filteredVehicles = computed(() => {
   return result;
 });
 
-const availableCount = computed(() => store.vehicles.filter(v => v.status === 'available').length);
-const bookedCount = computed(() => store.vehicles.filter(v => v.status === 'booked' || v.status === 'reserved').length);
-const unavailableCount = computed(() => store.vehicles.filter(v => v.status === 'unavailable').length);
+const availableCount = computed(() => store.vehicles.filter(v => effectiveStatus(v) === 'available').length);
+const bookedCount = computed(() => store.vehicles.filter(v => {
+  const s = effectiveStatus(v);
+  return s === 'booked' || s === 'reserved';
+}).length);
+const unavailableCount = computed(() => store.vehicles.filter(v => effectiveStatus(v) === 'unavailable').length);
+
+const clearDateFilter = () => {
+  dateFrom.value = '';
+  dateTo.value = '';
+};
 
 const fetchData = async () => {
   loading.value = true;
@@ -422,6 +451,38 @@ onMounted(async () => {
             hide-details
             style="min-width: 180px; max-width: 200px"
           />
+          <v-text-field
+            v-model="dateFrom"
+            type="date"
+            variant="solo-filled"
+            flat
+            density="compact"
+            rounded="lg"
+            hide-details
+            style="min-width: 150px; max-width: 170px"
+            label="С"
+          />
+          <v-text-field
+            v-model="dateTo"
+            type="date"
+            variant="solo-filled"
+            flat
+            density="compact"
+            rounded="lg"
+            hide-details
+            style="min-width: 150px; max-width: 170px"
+            label="По"
+          />
+          <v-btn
+            v-if="dateFrom || dateTo"
+            icon
+            variant="text"
+            size="small"
+            color="grey"
+            @click="clearDateFilter"
+          >
+            <v-icon size="18">mdi-close-circle</v-icon>
+          </v-btn>
           <v-btn color="primary" variant="tonal" rounded="lg" density="compact" @click="fetchData" :loading="loading">
             <v-icon>mdi-refresh</v-icon>
           </v-btn>
@@ -464,14 +525,19 @@ onMounted(async () => {
         <template #item.status="{ item }">
           <div>
             <v-chip
-              :color="statusConfig[item.status]?.color || 'grey'"
+              :color="statusConfig[effectiveStatus(item)]?.color || 'grey'"
               size="small"
               variant="tonal"
-              :prepend-icon="statusConfig[item.status]?.icon"
+              :prepend-icon="statusConfig[effectiveStatus(item)]?.icon"
             >
-              {{ statusConfig[item.status]?.label || item.status }}
+              {{ statusConfig[effectiveStatus(item)]?.label || item.status }}
             </v-chip>
-            <div v-if="vehicleBlockedPeriods(item.id).length" class="mt-1">
+            <div v-if="dateFrom && dateTo && isBlockedInRange(item.id)" class="mt-1">
+              <v-chip size="x-small" color="error" variant="flat" prepend-icon="mdi-lock-clock">
+                Заблокирован в периоде
+              </v-chip>
+            </div>
+            <div v-else-if="vehicleBlockedPeriods(item.id).length" class="mt-1">
               <v-chip size="x-small" color="error" variant="flat" prepend-icon="mdi-lock-clock">
                 {{ vehicleBlockedPeriods(item.id).length }} блок.
               </v-chip>

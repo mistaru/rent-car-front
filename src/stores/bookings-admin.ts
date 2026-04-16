@@ -13,6 +13,7 @@ export interface UpdateBookingData {
   customerPhone?: string;
   customerAdditionalInfo?: string;
   managerComment?: string;
+  addOns?: Array<{ code: string; quantity: number }>;
 }
 
 export interface BookingAdmin {
@@ -46,7 +47,7 @@ export interface BookingAdmin {
   currency: string;
   status: string;
   paymentStatus: string;
-  addOns: string[];
+  addOns: Array<{ code: string; name: string; pricePerDay: number; quantity: number }>;
   createdAt: string;
 }
 
@@ -62,10 +63,22 @@ export interface BookingHistoryItem {
   createdAt: string;
 }
 
+export interface ServiceOptionItem {
+  id: number;
+  code: string;
+  name: string;
+  category: string;
+  icon: string;
+  pricePerDay: number;
+  totalQuantity: number | null;
+  availableQuantity: number | null;
+}
+
 export const useBookingsAdminStore = defineStore('bookingsAdmin', () => {
   const bookings = ref<BookingAdmin[]>([]);
   const loading = ref(false);
   const error = ref<string | null>(null);
+  const serviceOptions = ref<ServiceOptionItem[]>([]);
 
   async function fetchAllBookings() {
     loading.value = true;
@@ -108,14 +121,24 @@ export const useBookingsAdminStore = defineStore('bookingsAdmin', () => {
     }
   }
 
+  async function fetchServiceOptions() {
+    try {
+      serviceOptions.value = await api.get<ServiceOptionItem[]>('/api/v1/service-options/active');
+    } catch (e) {
+      console.error('fetchServiceOptions error:', e);
+    }
+  }
+
   return {
     bookings,
     loading,
     error,
+    serviceOptions,
     fetchAllBookings,
     cancelBooking,
     updateBooking,
     fetchBookingHistory,
+    fetchServiceOptions,
   };
 });
 
