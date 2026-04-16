@@ -65,16 +65,16 @@
 
 
       <!-- ─── Confirmation Dialog ─── -->
-      <v-dialog v-model="confirmDialog" max-width="480" persistent>
-        <v-card rounded="xl" class="pa-2">
-          <v-card-text class="pa-6">
+      <v-dialog v-model="confirmDialog" max-width="700" persistent>
+        <v-card rounded="xl" class="pa-4 text-center">
+          <v-card-text class="pa-10">
             <div class="d-flex align-center ga-3 mb-4">
               <v-avatar color="warning" variant="tonal" size="48" rounded="lg">
                 <v-icon size="26">mdi-alert-circle-outline</v-icon>
               </v-avatar>
               <div>
-                <div class="text-subtitle-1 font-weight-bold">Before you confirm</div>
-                <div class="text-caption text-medium-emphasis">Please review your details</div>
+                <div class="text-h6 font-weight-bold">Before you confirm</div>
+                <div class="text-body-2 text-medium-emphasis">Please review your details</div>
               </div>
             </div>
 
@@ -85,21 +85,21 @@
             <!-- Summary -->
             <div class="confirm-summary pa-3 rounded-lg mb-4">
               <div class="d-flex justify-space-between mb-1">
-                <span class="text-caption text-medium-emphasis">Name</span>
-                <span class="text-body-2 font-weight-medium">{{ bookingStore.personalInfo.fullName }}</span>
+                <span class="text-body-2 text-black mb-3 font-weight-bold text-uppercase">Name</span>
+                <span class="text-body-1 text-black mb-3 font-weight-medium">{{ bookingStore.personalInfo.fullName }}</span>
               </div>
               <div class="d-flex justify-space-between mb-1">
-                <span class="text-caption text-medium-emphasis">Email</span>
-                <span class="text-body-2 font-weight-medium">{{ bookingStore.personalInfo.email }}</span>
+                <span class="text-body-2 text-black mb-3 font-weight-bold text-uppercase">Email</span>
+                <span class="text-body-1 text-black mb-3 font-weight-medium">{{ bookingStore.personalInfo.email }}</span>
               </div>
               <div class="d-flex justify-space-between mb-1">
-                <span class="text-caption text-medium-emphasis">Phone</span>
-                <span class="text-body-2 font-weight-medium">{{ bookingStore.personalInfo.phone }}</span>
+                <span class="text-body-2 text-black mb-3 font-weight-bold text-uppercase">Phone</span>
+                <span class="text-body-1 text-black mb-3 font-weight-medium">{{ bookingStore.personalInfo.phone }}</span>
               </div>
               <v-divider class="my-2" />
-              <div class="d-flex justify-space-between">
-                <span class="text-caption text-medium-emphasis">Total</span>
-                <span class="text-body-2 font-weight-bold text-primary">${{ bookingStore.totalAmount }}</span>
+              <div class="d-flex justify-space-between align-center mt-2 total-box pa-3 rounded-lg">
+                <span class="text-body-2 text-black mb-3 font-weight-bold text-uppercase">Total</span>
+                <span class="text-h6 font-weight-bold text-primary">${{ bookingStore.totalAmount }}</span>
               </div>
             </div>
           </v-card-text>
@@ -109,6 +109,7 @@
               variant="tonal"
               rounded="lg"
               flex="1"
+              size="x-large"
               @click="confirmDialog = false"
             >
               Go Back
@@ -118,6 +119,7 @@
               variant="flat"
               rounded="lg"
               flex="1"
+              size="x-large"
               :loading="bookingStore.submitting"
               @click="handleConfirmBooking"
             >
