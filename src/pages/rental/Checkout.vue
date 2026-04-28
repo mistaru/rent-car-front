@@ -101,8 +101,7 @@
                 <span class="text-body-2 text-black mb-3 font-weight-bold text-uppercase">Total</span>
                 <span class="text-h6 font-weight-bold text-primary">${{ bookingStore.totalAmount }}</span>
               </div>
-            </div>
-          </v-card-text>
+            </div></v-card-text>
 
           <v-card-actions class="px-6 pb-5 pt-0 d-flex ga-3">
             <v-btn
@@ -122,8 +121,7 @@
               size="x-large"
               :loading="bookingStore.submitting"
               @click="handleConfirmBooking"
-            >
-              <v-icon start>mdi-check-circle</v-icon>
+            ><v-icon start>mdi-check-circle</v-icon>
               Yes, Confirm
             </v-btn>
           </v-card-actions>
@@ -208,21 +206,20 @@
                       </v-list-item>
                     </template>
                   </v-autocomplete>
-                </v-col>
-                <v-col cols="12" sm="6">
-                  <v-text-field
-                    v-model="bookingStore.bookingDetails.pickupDate"
-                    label="Pick-up Date"
-                    prepend-inner-icon="mdi-calendar-arrow-right"
-                    variant="outlined"
-                    density="comfortable"
-                    rounded="lg"
-                    type="date"
-                    :min="minPickupDate"
-                    :rules="[rules.required]"
-                    persistent-placeholder
-                  />
-                </v-col>
+                </v-col><v-col cols="12" sm="6">
+                <v-text-field
+                  v-model="bookingStore.bookingDetails.pickupDate"
+                  label="Pick-up Date"
+                  prepend-inner-icon="mdi-calendar-arrow-right"
+                  variant="outlined"
+                  density="comfortable"
+                  rounded="lg"
+                  type="date"
+                  :min="minPickupDate"
+                  :rules="[rules.required]"
+                  persistent-placeholder
+                />
+              </v-col>
                 <v-col cols="12" sm="6">
                   <v-text-field
                     v-model="bookingStore.bookingDetails.pickupTime"
@@ -260,8 +257,7 @@
                     type="time"
                     persistent-placeholder
                   />
-                </v-col>
-              </v-row>
+                </v-col></v-row>
             </v-card-text>
           </v-card>
 
@@ -430,50 +426,82 @@
             </v-card-text>
           </v-card>
 
-          <!-- Step 4: Payment Method -->
-<!--          <v-card elevation="0" rounded="xl" class="mb-4 checkout-card">-->
-<!--            <v-card-title class="d-flex align-center ga-3 pa-5 pb-3">-->
-<!--              <v-avatar color="primary" size="32">-->
-<!--                <span class="text-body-2 font-weight-bold text-white">4</span>-->
-<!--              </v-avatar>-->
-<!--              <span class="text-subtitle-1 font-weight-bold">Payment Method</span>-->
-<!--            </v-card-title>-->
-<!--            <v-card-text class="pa-5 pt-0">-->
-<!--              <v-radio-group v-model="bookingStore.paymentMethod" hide-details>-->
-<!--                <v-card-->
-<!--                  :class="['payment-option mb-3', { 'payment-option&#45;&#45;selected': bookingStore.paymentMethod === 'online' }]"-->
-<!--                  elevation="0"-->
-<!--                  rounded="xl"-->
-<!--                  @click="bookingStore.paymentMethod = 'online'"-->
-<!--                >-->
-<!--                  <v-card-text class="d-flex align-center ga-3 pa-4">-->
-<!--                    <v-radio value="online" color="primary" hide-details />-->
-<!--                    <v-icon color="primary">mdi-credit-card</v-icon>-->
-<!--                    <div>-->
-<!--                      <div class="text-subtitle-2 font-weight-bold">Pay Online</div>-->
-<!--                      <div class="text-caption text-medium-emphasis">Card / Crypto</div>-->
-<!--                    </div>-->
-<!--                  </v-card-text>-->
-<!--                </v-card>-->
+          <!-- Step 4: Documents -->
+          <v-card elevation="0" rounded="xl" class="mb-4 checkout-card">
+            <v-card-title class="d-flex align-center ga-3 pa-5 pb-3">
+              <v-avatar color="primary" size="32">
+                <span class="text-body-2 font-weight-bold text-white">4</span>
+              </v-avatar>
+              <span class="text-subtitle-1 font-weight-bold">Documents</span>
+              <v-chip size="x-small" color="info" variant="tonal" class="ml-2">Optional</v-chip>
+            </v-card-title>
+            <v-card-text class="pa-5 pt-0">
+              <v-alert type="info" variant="tonal" density="compact" rounded="lg" class="mb-4">
+                Upload passport and driver's license for faster verification. You can also send them later.
+              </v-alert>
 
-<!--                <v-card-->
-<!--                  :class="['payment-option', { 'payment-option&#45;&#45;selected': bookingStore.paymentMethod === 'delivery' }]"-->
-<!--                  elevation="0"-->
-<!--                  rounded="xl"-->
-<!--                  @click="bookingStore.paymentMethod = 'delivery'"-->
-<!--                >-->
-<!--                  <v-card-text class="d-flex align-center ga-3 pa-4">-->
-<!--                    <v-radio value="delivery" color="primary" hide-details />-->
-<!--                    <v-icon color="primary">mdi-cash</v-icon>-->
-<!--                    <div>-->
-<!--                      <div class="text-subtitle-2 font-weight-bold">Pay on Delivery</div>-->
-<!--                      <div class="text-caption text-medium-emphasis">Cash or card on pick-up</div>-->
-<!--                    </div>-->
-<!--                  </v-card-text>-->
-<!--                </v-card>-->
-<!--              </v-radio-group>-->
-<!--            </v-card-text>-->
-<!--          </v-card>-->
+              <div v-for="docType in localDocTypes" :key="docType.value" class="mb-4">
+                <div class="d-flex align-center ga-2 mb-2">
+                  <v-icon size="20" :color="localFiles[docType.value] ? 'success' : 'grey'">{{ docType.icon }}</v-icon>
+                  <span class="text-subtitle-2 font-weight-bold">{{ docType.label }}</span>
+                  <v-chip v-if="localFiles[docType.value]" size="x-small" color="success" variant="tonal">Ready</v-chip>
+                </div>
+
+                <div v-if="localFiles[docType.value]" class="d-flex align-center ga-2 pa-2 rounded-lg" style="background: rgba(0,0,0,0.03)">
+                  <v-icon size="20" color="blue">mdi-file-image</v-icon>
+                  <span class="text-body-2 flex-grow-1 text-truncate">{{ localFiles[docType.value]!.name }}</span>
+                  <v-btn icon size="x-small" variant="text" @click="previewLocal(docType.value)">
+                    <v-icon size="16">mdi-eye</v-icon>
+                  </v-btn>
+                  <v-btn icon size="x-small" variant="text" color="error" @click="localFiles[docType.value] = null">
+                    <v-icon size="16">mdi-delete</v-icon>
+                  </v-btn>
+                </div>
+
+                <div
+                  v-else
+                  class="upload-zone pa-6 text-center rounded-xl"
+                  @dragover.prevent="dragOver = docType.value"
+                  @dragleave="dragOver = null"
+                  @drop.prevent="onLocalDrop($event, docType.value)"
+                  :class="{ 'upload-zone--active': dragOver === docType.value }"
+                  @click="pickLocalFile(docType.value)"
+                >
+                  <v-icon size="36" color="grey-lighten-1" class="mb-2">mdi-cloud-upload-outline</v-icon>
+                  <p class="text-body-2 text-medium-emphasis mb-2">Drag & drop or click to upload</p>
+                  <v-btn size="small" variant="tonal" color="primary" rounded="lg" @click.stop="pickLocalFile(docType.value)">
+                    Choose File
+                  </v-btn>
+                  <p class="text-caption text-medium-emphasis mt-2">JPG, PNG, PDF — max 10MB</p>
+                </div>
+              </div>
+
+              <input ref="localFileInput" type="file" accept="image/*,.pdf" hidden @change="onLocalFileChange" />
+
+              <!-- Local preview dialog -->
+              <v-dialog v-model="localPreviewDialog" max-width="800">
+                <v-card rounded="xl">
+                  <v-card-title class="d-flex justify-space-between align-center">
+                    <span>Preview</span>
+                    <v-btn icon variant="text" @click="localPreviewDialog = false"><v-icon>mdi-close</v-icon></v-btn>
+                  </v-card-title>
+                  <v-card-text class="pa-0">
+                    <iframe
+                      v-if="localPreviewIsPdf"
+                      :src="localPreviewUrl"
+                      width="100%" height="600" style="border: none"
+                    />
+                    <v-img v-else-if="localPreviewUrl" :src="localPreviewUrl" max-height="600" contain />
+                  </v-card-text>
+                </v-card>
+              </v-dialog>
+            </v-card-text>
+          </v-card>
+
+          <!-- Step 5: Payment Method (commented out) -->
+          <!--          <v-card elevation="0" rounded="xl" class="mb-4 checkout-card">-->
+          <!--            ...-->
+          <!--          </v-card>-->
         </v-col>
 
         <!-- Right Column: Summary -->
@@ -532,8 +560,7 @@
                 <div class="text-caption text-medium-emphasis d-flex align-center ga-1">
                   <v-icon size="12">mdi-map-marker</v-icon>
                   {{ pickupLocationName }}
-                </div>
-              </div>
+                </div></div>
 
               <v-divider />
 
@@ -613,6 +640,16 @@
                 >
                   Please complete personal information
                 </v-alert>
+                <v-alert
+                  v-if="!documentsReady"
+                  type="info"
+                  variant="tonal"
+                  density="compact"
+                  rounded="lg"
+                  class="mb-2"
+                >
+                  Please upload passport and driver's license
+                </v-alert>
 
                 <v-btn
                   block
@@ -621,21 +658,18 @@
                   rounded="lg"
                   elevation="0"
                   class="mt-2 confirm-btn"
-                  :disabled="!bookingStore.canSubmit"
+                  :disabled="!bookingStore.canSubmit || !documentsReady"
                   :loading="bookingStore.submitting"
                   @click="openConfirmDialog"
-                >
-                <v-icon start>mdi-check-circle</v-icon>
-                Confirm and Request Booking
+                ><v-icon start>mdi-check-circle</v-icon>
+                  Confirm and Request Booking
                 </v-btn>
               </v-card-text>
             </v-card>
           </div>
         </v-col>
       </v-row>
-    </v-container>
-
-    <RentalFooter />
+    </v-container><RentalFooter />
   </div>
 </template>
 
@@ -646,6 +680,7 @@ import { useBookingStore } from '@/stores/booking';
 import type { AddonOption } from '@/stores/booking';
 import RentalFooter from '@/components/rental/RentalFooter.vue';
 import CarImageCarousel from '@/components/rental/CarImageCarousel.vue';
+import api, { BASE_URL } from '@/axios/api';
 
 const router = useRouter();
 const route = useRoute();
@@ -668,10 +703,6 @@ const pickupLocationName = computed(() => {
   return loc ? loc.name : 'Location TBD';
 });
 
-import { BASE_URL } from '@/axios/api';
-
-
-
 const vehicleImages = computed((): string[] => {
   const v = bookingStore.selectedVehicle as any;
   if (!v) return [];
@@ -688,6 +719,54 @@ const vehicleImages = computed((): string[] => {
   return [];
 });
 
+// ─── Documents (Step 4) ───
+const localDocTypes = [
+  { value: 'PASSPORT' as const, label: 'Passport', icon: 'mdi-passport' },
+  { value: 'DRIVERS_LICENSE' as const, label: "Driver's License", icon: 'mdi-card-account-details' },
+];
+
+const localFiles = ref<Record<string, File | null>>({
+  PASSPORT: null,
+  DRIVERS_LICENSE: null,
+});
+
+const localFileInput = ref<HTMLInputElement>();
+const currentLocalType = ref<'PASSPORT' | 'DRIVERS_LICENSE'>('PASSPORT');
+const dragOver = ref<string | null>(null);
+const localPreviewDialog = ref(false);
+const localPreviewUrl = ref('');
+const localPreviewIsPdf = ref(false);
+
+const documentsReady = computed(() => {
+  return localFiles.value.PASSPORT !== null && localFiles.value.DRIVERS_LICENSE !== null;
+});
+
+function pickLocalFile(type: 'PASSPORT' | 'DRIVERS_LICENSE') {
+  currentLocalType.value = type;
+  localFileInput.value?.click();
+}
+
+function onLocalFileChange(e: Event) {
+  const file = (e.target as HTMLInputElement).files?.[0];
+  if (file) localFiles.value[currentLocalType.value] = file;
+  if (localFileInput.value) localFileInput.value.value = '';
+}
+
+function onLocalDrop(e: DragEvent, type: string) {
+  dragOver.value = null;
+  const file = e.dataTransfer?.files?.[0];
+  if (file) localFiles.value[type] = file;
+}
+
+function previewLocal(type: string) {
+  const file = localFiles.value[type];
+  if (!file) return;
+  localPreviewIsPdf.value = file.type === 'application/pdf';
+  localPreviewUrl.value = URL.createObjectURL(file);
+  localPreviewDialog.value = true;
+}
+
+// ─── Lifecycle ───
 onMounted(async () => {
   if (!bookingStore.selectedVehicle && route.params.id) {
     await bookingStore.fetchVehicleById(Number(route.params.id));
@@ -731,8 +810,6 @@ const rules = {
 };
 
 const confirmDialog = ref(false);
-// const bookingError = ref('');
-// const errorSnackbar = ref(false);
 
 function openConfirmDialog() {
   confirmDialog.value = true;
@@ -740,10 +817,28 @@ function openConfirmDialog() {
 
 async function handleConfirmBooking() {
   confirmDialog.value = false;
+  let bookingId: number | undefined;
   try {
-    await bookingStore.confirmBooking();
+    bookingId = await bookingStore.confirmBooking();
   } catch (e: any) {
     // Error is handled globally by the API interceptor
+  }
+
+  // Upload documents even if payment failed — booking may already exist
+  if (bookingId) {
+    for (const [type, file] of Object.entries(localFiles.value)) {
+      if (file) {
+        const form = new FormData();
+        form.append('file', file);
+        form.append('type', type);
+        form.append('uploadedBy', 'client');
+        try {
+          await api.post(`/api/v1/bookings/${bookingId}/documents`, form);
+        } catch (e) {
+          console.error(`Failed to upload ${type}:`, e);
+        }
+      }
+    }
   }
 }
 
@@ -786,12 +881,10 @@ onBeforeUnmount(() => {
   top: 80px;
 }
 
-/* Vehicle title below carousel */
 .summary-vehicle-title {
   background: white;
 }
 
-/* Addon cards */
 .addon-card {
   border: 2px solid rgba(0, 0, 0, 0.08);
   cursor: pointer;
@@ -814,7 +907,6 @@ onBeforeUnmount(() => {
   pointer-events: none;
 }
 
-/* Payment options */
 .payment-option {
   border: 2px solid rgba(0, 0, 0, 0.08);
   cursor: pointer;
@@ -830,7 +922,6 @@ onBeforeUnmount(() => {
   background: rgba(103, 58, 183, 0.04);
 }
 
-/* Confirm button */
 .confirm-btn {
   text-transform: none;
   font-weight: 700;
@@ -861,5 +952,17 @@ onBeforeUnmount(() => {
 
 .text-black {
   color: #000 !important;
+}
+
+.upload-zone {
+  border: 2px dashed rgba(0, 0, 0, 0.15);
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.upload-zone:hover,
+.upload-zone--active {
+  border-color: #673ab7;
+  background: rgba(103, 58, 183, 0.04);
 }
 </style>

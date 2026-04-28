@@ -10,6 +10,7 @@ declare module 'vue' {
     CarImageCarousel: typeof import('./components/rental/CarImageCarousel.vue')['default']
     ConfirmDialog: typeof import('./components/ConfirmDialog.vue')['default']
     DataTable: typeof import('./components/DataTable.vue')['default']
+    DocumentUpload: typeof import('./components/rental/DocumentUpload.vue')['default']
     FilterPanel: typeof import('./components/rental/FilterPanel.vue')['default']
     Hint: typeof import('./components/Hint.vue')['default']
     ListSnackBar: typeof import('./components/ListSnackBar.vue')['default']

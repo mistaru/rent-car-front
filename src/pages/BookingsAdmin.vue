@@ -3,7 +3,7 @@ import { ref, computed, onMounted } from 'vue';
 import { useBookingsAdminStore } from '@/stores/bookings-admin';
 import type { BookingAdmin, UpdateBookingData, BookingHistoryItem, ServiceOptionItem } from '@/stores/bookings-admin';
 import ModalDialog from '@/components/UserModal.vue';
-import api from "@/axios/api";
+import api, { BASE_URL } from "@/axios/api";
 
 const store = useBookingsAdminStore();
 
@@ -25,6 +25,84 @@ const locations = ref<LocationItem[]>([]);
 const editForm = ref<UpdateBookingData>({});
 const editSaving = ref(false);
 const editAddOns = ref<Array<{ code: string; name: string; quantity: number; maxQuantity: number | null; pricePerDay: number }>>([]);
+
+// Управление документами
+interface BookingDocument {
+  id: number;
+  fileName: string;
+  fileType: string;
+  documentType: 'PASSPORT' | 'DRIVER_LICENSE';
+  uploadedAt: string;
+}
+
+const editDocuments = ref<BookingDocument[]>([]);
+const documentsLoading = ref(false);
+const uploadingDoc = ref(false);
+const previewDialog = ref(false);
+const previewUrl = ref('');
+const previewName = ref('');
+
+const docTypeLabels: Record<string, { label: string; icon: string; color: string }> = {
+  PASSPORT: { label: 'Паспорт', icon: 'mdi-card-account-details', color: 'primary' },
+  DRIVERS_LICENSE: { label: 'Вод. удостоверение', icon: 'mdi-card-account-details-outline', color: 'success' },
+};
+
+const fetchDocuments = async (bookingId: number) => {
+  documentsLoading.value = true;
+  try {
+    const data = await api.get<BookingDocument[]>(`/api/v1/bookings/${bookingId}/documents`);
+    editDocuments.value = data;
+  } catch (e) {
+    editDocuments.value = [];
+  } finally {
+    documentsLoading.value = false;
+  }
+};
+
+const uploadDocument = async (file: File, documentType: string) => {
+  if (!selectedBooking.value) return;
+  uploadingDoc.value = true;
+  try {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('type', documentType);
+    await api.post(`/api/v1/bookings/${selectedBooking.value.id}/documents`, formData);
+    await fetchDocuments(selectedBooking.value.id);
+  } finally {
+    uploadingDoc.value = false;
+  }
+};
+
+const deleteDocument = async (docId: number) => {
+  if (!selectedBooking.value) return;
+  try {
+    await api.delete(`/api/v1/bookings/${selectedBooking.value.id}/documents/${docId}`);
+    editDocuments.value = editDocuments.value.filter(d => d.id !== docId);
+  } catch (e) { /* handled */ }
+};
+
+const previewDocument = async (doc: BookingDocument) => {
+  if (!selectedBooking.value) return;
+  try {
+    const res = await fetch(
+      `${BASE_URL}/api/v1/bookings/${selectedBooking.value.id}/documents/${doc.id}/download`
+    );
+    if (!res.ok) throw new Error('Failed to download');
+    const blob = await res.blob();
+    previewUrl.value = URL.createObjectURL(blob);
+    previewName.value = doc.fileName;
+    previewDialog.value = true;
+  } catch (e) { /* handled */ }
+};
+
+const handleFileUpload = (event: Event, documentType: string) => {
+  const input = event.target as HTMLInputElement;
+  if (input.files?.length) {
+    uploadDocument(input.files[0], documentType);
+    input.value = '';
+  }
+};
+
 const headers = [
   { title: '№', key: 'id', width: '60px' },
   { title: 'Автомобиль', key: 'vehicle' },
@@ -163,6 +241,7 @@ const openEdit = (booking: BookingAdmin) => {
     };
   });
   editDialog.value = true;
+  fetchDocuments(booking.id);
 };
 
 const saveEdit = async () => {
@@ -477,6 +556,7 @@ onMounted(fetchBookings);
               <v-avatar size="52" rounded="lg" class="vehicle-avatar">
                 <v-img :src="selectedBooking.vehicle.image" cover />
               </v-avatar>
+              <BookingDocumentsPanel :booking-id="selectedBooking.id" />
               <div>
                 <div class="text-h6 font-weight-bold">
                   {{ selectedBooking.vehicle.brand }} {{ selectedBooking.vehicle.model }}
@@ -910,6 +990,123 @@ onMounted(fetchBookings);
               </v-table>
             </v-col>
 
+            <!-- Документы клиента -->
+            <v-col cols="12" class="mb-1 mt-2">
+              <div class="detail-section__title">
+                <v-icon size="16" color="primary">mdi-file-document-outline</v-icon>
+                Документы клиента
+              </div>
+            </v-col>
+            <v-col cols="12">
+              <v-progress-linear v-if="documentsLoading" indeterminate color="primary" class="mb-3" />
+
+              <div v-if="editDocuments.length" class="d-flex flex-column ga-2 mb-4">
+                <v-card
+                  v-for="doc in editDocuments"
+                  :key="doc.id"
+                  variant="outlined"
+                  rounded="lg"
+                  class="pa-3"
+                >
+                  <div class="d-flex align-center justify-space-between">
+                    <div class="d-flex align-center ga-3">
+                      <v-avatar
+                        size="36"
+                        :color="docTypeLabels[doc.documentType]?.color || 'grey'"
+                        variant="tonal"
+                        rounded="lg"
+                      >
+                        <v-icon size="18">{{ docTypeLabels[doc.documentType]?.icon || 'mdi-file' }}</v-icon>
+                      </v-avatar>
+                      <div>
+                        <div class="text-body-2 font-weight-medium">
+                          {{ docTypeLabels[doc.documentType]?.label || doc.documentType }}
+                        </div>
+                        <div class="text-caption text-medium-emphasis">
+                          {{ doc.fileName }} · {{ formatDateTime(doc.uploadedAt) }}
+                        </div>
+                      </div>
+                    </div>
+                    <div class="d-flex ga-1">
+                      <v-tooltip text="Просмотр" location="top">
+                        <template #activator="{ props }">
+                          <v-btn
+                            v-bind="props"
+                            icon
+                            size="small"
+                            variant="text"
+                            color="primary"
+                            @click="previewDocument(doc)"
+                          >
+                            <v-icon size="18">mdi-eye-outline</v-icon>
+                          </v-btn>
+                        </template>
+                      </v-tooltip>
+                      <v-tooltip text="Удалить" location="top">
+                        <template #activator="{ props }">
+                          <v-btn
+                            v-bind="props"
+                            icon
+                            size="small"
+                            variant="text"
+                            color="error"
+                            @click="deleteDocument(doc.id)"
+                          >
+                            <v-icon size="18">mdi-delete-outline</v-icon>
+                          </v-btn>
+                        </template>
+                      </v-tooltip>
+                    </div>
+                  </div>
+                </v-card>
+              </div>
+
+              <div v-else-if="!documentsLoading" class="text-center py-4 mb-3 rounded-lg" style="background: rgba(0,0,0,0.02)">
+                <v-icon size="32" color="grey-lighten-1">mdi-file-document-remove-outline</v-icon>
+                <div class="text-caption text-medium-emphasis mt-1">Документы не загружены</div>
+              </div>
+
+              <div class="d-flex ga-2 flex-wrap">
+                <v-btn
+                  variant="tonal"
+                  color="primary"
+                  size="small"
+                  rounded="lg"
+                  prepend-icon="mdi-card-account-details"
+                  :loading="uploadingDoc"
+                  @click="($refs.passportInput as HTMLInputElement)?.click()"
+                >
+                  Загрузить паспорт
+                </v-btn>
+                <input
+                  ref="passportInput"
+                  type="file"
+                  accept="image/*,.pdf"
+                  hidden
+                  @change="(e: Event) => handleFileUpload(e, 'PASSPORT')"
+                />
+
+                <v-btn
+                  variant="tonal"
+                  color="success"
+                  size="small"
+                  rounded="lg"
+                  prepend-icon="mdi-card-account-details-outline"
+                  :loading="uploadingDoc"
+                  @click="($refs.licenseInput as HTMLInputElement)?.click()"
+                >
+                  Загрузить вод. удостоверение
+                </v-btn>
+                <input
+                  ref="licenseInput"
+                  type="file"
+                  accept="image/*,.pdf"
+                  hidden
+                  @change="(e: Event) => handleFileUpload(e, 'DRIVERS_LICENSE')"
+                />
+              </div>
+            </v-col>
+
             <v-col cols="12">
               <v-textarea
                 v-model="editForm.managerComment"
@@ -971,6 +1168,32 @@ onMounted(fetchBookings);
         </div>
       </div>
     </ModalDialog>
+
+    <!-- Document Preview Dialog -->
+    <v-dialog v-model="previewDialog" max-width="800">
+      <v-card rounded="xl">
+        <v-card-title class="d-flex align-center justify-space-between pa-4">
+          <span class="text-body-1 font-weight-bold">{{ previewName }}</span>
+          <v-btn icon variant="text" size="small" @click="previewDialog = false">
+            <v-icon>mdi-close</v-icon>
+          </v-btn>
+        </v-card-title>
+        <v-divider />
+        <v-card-text class="pa-4 text-center">
+          <v-img
+            v-if="previewName.match(/\.(jpg|jpeg|png|gif|webp)$/i)"
+            :src="previewUrl"
+            max-height="600"
+            contain
+          />
+          <iframe
+            v-else
+            :src="previewUrl"
+            style="width: 100%; height: 600px; border: none"
+          />
+        </v-card-text>
+      </v-card>
+    </v-dialog>
   </v-container>
 </template>
 

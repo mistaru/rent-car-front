@@ -309,10 +309,16 @@ export const useBookingStore = defineStore('booking', () => {
 
       // 4. Оплата (если online)
       if (paymentMethod.value === 'online') {
-        await initiatePayment(booking.id);
-        await processPayment(booking.id, 'txn_demo');
+        try {
+          await initiatePayment(booking.id);
+          await processPayment(booking.id, 'txn_demo');
+        } catch (payErr: any) {
+          console.error('Payment failed:', payErr?.message || payErr);
+          // Бронирование создано, в любом случае выдается id, чтобы можно было загрузить документы
+        }
       }
       submitted.value = true;
+      return booking.id;
     } catch (e: any) {
       console.error('Booking failed:', e?.message || e);
       throw new Error(e?.message || 'Booking failed');
