@@ -13,13 +13,17 @@
       </v-container>
     </div>
 
+    <div class="search-bar-sticky">
+      <v-container fluid class="px-6 py-0">
+        <SearchBar />
+      </v-container>
+    </div>
+
     <v-container fluid class="px-6">
-      <!-- Search Bar -->
-      <SearchBar />
 
       <v-row>
         <!-- Filters Sidebar -->
-        <v-col cols="12" md="3" lg="2">
+        <v-col cols="12" md="3" lg="2" class="filter-col">
           <FilterPanel />
         </v-col>
 
@@ -133,5 +137,21 @@ onMounted(() => {
 
 .vehicles-hero p {
   color: rgba(255, 255, 255, 0.7) !important;
+}
+
+.search-bar-sticky {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: #f8f7fc;
+  padding: 12px 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.filter-col {
+  align-self: flex-start;
+  position: sticky;
+  top: 90px;
+  z-index: 5;
 }
 </style>

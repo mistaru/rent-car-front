@@ -1,5 +1,5 @@
 <template>
-  <v-card class="search-bar-card mb-6" elevation="2" rounded="xl">
+  <v-card class="search-bar-card" elevation="2" rounded="xl">
     <v-card-text>
       <v-row align="center" dense>
         <v-col cols="12" sm="6" md="3">

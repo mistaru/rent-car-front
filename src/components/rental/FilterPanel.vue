@@ -117,7 +117,9 @@ onMounted(() => {
 <style scoped>
 .filter-panel {
   position: sticky;
-  top: 80px;
+  top: 100px;
+  max-height: calc(100vh - 110px);
+  overflow-y: auto;
   border: 1px solid rgba(103, 58, 183, 0.08);
 }
 </style>
