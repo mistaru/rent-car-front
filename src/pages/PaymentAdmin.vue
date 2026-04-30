@@ -2,6 +2,7 @@
 import { ref, onMounted, computed, watch } from 'vue';
 import { usePaymentStore } from '@/stores/payments';
 import { useBookingsAdminStore } from '@/stores/bookings-admin';
+import type { BookingAdmin } from '@/stores/bookings-admin';
 import type { ProcessPaymentRequest, PaymentMethod, PaymentStatus, PaymentDto } from '@/types/payment';
 
 const paymentStore = usePaymentStore();
@@ -9,7 +10,7 @@ const bookingsStore = useBookingsAdminStore();
 
 const createDialog = ref(false);
 const showProcessDialog = ref(false);
-const search = ref('');
+const searchText = ref('');
 
 // Form for creating a new payment
 const newPaymentForm = ref({
@@ -32,6 +33,9 @@ const paymentMethods: PaymentMethod[] = ['ONLINE', 'ON_DELIVERY'];
 const headers = [
   { title: 'ID', key: 'id', width: '80px' },
   { title: 'Бронирование', key: 'bookingId', width: '140px' },
+  { title: 'Авто', key: 'vehicle', sortable: false },
+  { title: 'Клиент', key: 'customer', sortable: false },
+  { title: 'Даты', key: 'dates', sortable: false },
   { title: 'Сумма', key: 'amount', align: 'end' as const },
   { title: 'Метод', key: 'method' },
   { title: 'Статус', key: 'status', align: 'center' as const },
@@ -49,6 +53,45 @@ const getNormalizedValue = (value: any): string => {
   }
   return value;
 };
+
+type PaymentTableItem = PaymentDto & {
+  booking: BookingAdmin | null;
+};
+
+const bookingById = computed(() => {
+  return new Map(bookingsStore.bookings.map(booking => [booking.id, booking]));
+});
+
+const paymentRows = computed<PaymentTableItem[]>(() => {
+  return paymentStore.payments.map(payment => ({
+    ...payment,
+    booking: bookingById.value.get(payment.bookingId) ?? null,
+  }));
+});
+
+const filteredPaymentRows = computed(() => {
+  let result = paymentRows.value;
+  if (searchText.value.trim()) {
+    const q = searchText.value.toLowerCase();
+    result = result.filter(payment => {
+      const booking = payment.booking;
+      return (
+        String(payment.id).includes(q) ||
+        String(payment.bookingId).includes(q) ||
+        String(payment.amount).includes(q) ||
+        (payment.transactionId || '').toLowerCase().includes(q) ||
+        getNormalizedValue(payment.method).toLowerCase().includes(q) ||
+        getNormalizedValue(payment.status).toLowerCase().includes(q) ||
+        (booking?.customer.fullName || '').toLowerCase().includes(q) ||
+        (booking?.customer.email || '').toLowerCase().includes(q) ||
+        (booking?.customer.phone || '').toLowerCase().includes(q) ||
+        `${booking?.vehicle.brand || ''} ${booking?.vehicle.model || ''}`.toLowerCase().includes(q) ||
+        (booking?.vehicle.carClass || '').toLowerCase().includes(q)
+      );
+    });
+  }
+  return result;
+});
 
 const unpaidBookings = computed(() => {
   return bookingsStore.bookings.filter(booking => {
@@ -82,7 +125,7 @@ const handleInitiate = async () => {
       bookingId: null,
       amount: 0,
       method: 'ONLINE',
-      status: 'PENDING_PAYMENT',
+      status: 'INITIATED',
     };
   } catch (e) {
     console.error('Initiation failed', e);
@@ -108,6 +151,14 @@ const handleProcess = async () => {
 
 const formatCurrency = (amount: number) => {
   return new Intl.NumberFormat('ru-RU', { style: 'currency', currency: 'USD' }).format(amount);
+};
+
+const formatDate = (date: string) => {
+  return new Date(date).toLocaleDateString('ru-RU', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  });
 };
 
 const getStatusColor = (status: any) => {
@@ -193,31 +244,64 @@ onMounted(() => {
         <div class="d-flex align-center ga-2">
           <v-icon color="primary">mdi-table</v-icon>
           <span class="text-subtitle-1 font-weight-bold">Список транзакций</span>
-          <v-chip size="x-small" color="primary" variant="tonal">{{ paymentStore.payments.length }}</v-chip>
+          <v-chip size="x-small" color="primary" variant="tonal">{{ filteredPaymentRows.length }}</v-chip>
         </div>
+
         <v-text-field
-          v-model="search"
+          v-model="searchText"
           prepend-inner-icon="mdi-magnify"
-          label="Поиск по ID или транзакции"
           variant="solo-filled"
           flat
           density="compact"
           rounded="lg"
           hide-details
-          style="max-width: 400px; width: 100%"
+          style="min-width: 240px; max-width: 300px"
+          clearable
+          placeholder="Поиск по ID, клиенту, авто..."
         />
       </div>
 
       <v-data-table
         :headers="headers"
-        :items="paymentStore.payments"
-        :search="search"
+        :items="filteredPaymentRows"
         :loading="paymentStore.loading"
         hover
         class="payment-table"
       >
         <template #item.bookingId="{ item }">
           <span class="font-weight-medium text-primary">#{{ item.bookingId }}</span>
+        </template>
+        <template #item.vehicle="{ item }">
+          <div v-if="item.booking" class="d-flex align-center ga-3 py-2">
+            <v-avatar size="42" rounded="lg" class="vehicle-avatar">
+              <v-img :src="item.booking.vehicle.image" cover />
+            </v-avatar>
+            <div>
+              <div class="text-body-2 font-weight-bold">
+                {{ item.booking.vehicle.brand }} {{ item.booking.vehicle.model }}
+              </div>
+              <div class="text-caption text-medium-emphasis">{{ item.booking.vehicle.carClass }}</div>
+            </div>
+          </div>
+          <span v-else class="text-caption text-medium-emphasis">-</span>
+        </template>
+        <template #item.customer="{ item }">
+          <div v-if="item.booking">
+            <div class="text-body-2 font-weight-medium">{{ item.booking.customer.fullName }}</div>
+            <div class="text-caption text-medium-emphasis">
+              {{ item.booking.customer.phone || item.booking.customer.email }}
+            </div>
+          </div>
+          <span v-else class="text-caption text-medium-emphasis">-</span>
+        </template>
+        <template #item.dates="{ item }">
+          <div v-if="item.booking" class="d-flex align-center ga-1">
+            <v-icon size="14" color="success">mdi-circle-small</v-icon>
+            <span class="text-body-2">{{ formatDate(item.booking.pickupDate) }}</span>
+            <v-icon size="14">mdi-arrow-right</v-icon>
+            <span class="text-body-2">{{ formatDate(item.booking.dropoffDate) }}</span>
+          </div>
+          <span v-else class="text-caption text-medium-emphasis">-</span>
         </template>
         <template #item.amount="{ item }">
           <span class="font-weight-bold">{{ formatCurrency(item.amount) }}</span>
@@ -308,7 +392,12 @@ onMounted(() => {
                 no-data-text="Нет бронирований, ожидающих оплату"
               >
                 <template #selection="{ item }">
-                  <span class="font-weight-medium">Бронирование #{{ item.raw.id }}</span>
+                  <div class="d-flex align-center ga-2">
+                    <span class="font-weight-medium">Бронирование #{{ item.raw.id }}</span>
+                    <span class="text-caption text-medium-emphasis">
+                      {{ item.raw.vehicle.brand }} {{ item.raw.vehicle.model }}
+                    </span>
+                  </div>
                 </template>
                 <template #item="{ props, item }">
                   <v-list-item v-bind="props">
@@ -316,8 +405,30 @@ onMounted(() => {
                       <div class="font-weight-bold">Бронирование #{{ item.raw.id }}</div>
                     </template>
                     <template #subtitle>
-                      <div>{{ item.raw.customer.fullName }} | {{ item.raw.vehicle.brand }} {{ item.raw.vehicle.model }}</div>
-                      <div class="text-primary font-weight-medium">{{ formatCurrency(item.raw.totalAmount) }}</div>
+                      <div class="d-flex align-center ga-3 py-2">
+                        <v-avatar size="42" rounded="lg" class="vehicle-avatar">
+                          <v-img :src="item.raw.vehicle.image" cover />
+                        </v-avatar>
+                        <div>
+                          <div class="text-body-2 font-weight-bold">
+                            {{ item.raw.vehicle.brand }} {{ item.raw.vehicle.model }}
+                          </div>
+                          <div class="text-caption text-medium-emphasis">
+                            {{ item.raw.vehicle.carClass }}
+                          </div>
+                        </div>
+                      </div>
+                      <div class="text-body-2 font-weight-medium">{{ item.raw.customer.fullName }}</div>
+                      <div class="text-caption text-medium-emphasis">
+                        {{ item.raw.customer.phone || item.raw.customer.email }}
+                      </div>
+                      <div class="d-flex align-center ga-1 mt-1">
+                        <v-icon size="14" color="success">mdi-circle-small</v-icon>
+                        <span class="text-body-2">{{ formatDate(item.raw.pickupDate) }}</span>
+                        <v-icon size="14">mdi-arrow-right</v-icon>
+                        <span class="text-body-2">{{ formatDate(item.raw.dropoffDate) }}</span>
+                      </div>
+                      <div class="text-primary font-weight-medium mt-1">{{ formatCurrency(item.raw.totalAmount) }}</div>
                     </template>
                     <template #append>
                       <v-chip size="x-small" :color="getStatusColor(item.raw.paymentStatus)">
@@ -328,6 +439,7 @@ onMounted(() => {
                 </template>
               </v-autocomplete>
             </v-col>
+
             <v-col cols="12" sm="6">
               <v-text-field
                 v-model.number="newPaymentForm.amount"

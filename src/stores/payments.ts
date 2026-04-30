@@ -40,10 +40,10 @@ export const usePaymentStore = defineStore('payments', () => {
       if (!paymentData.bookingId) {
         throw new Error('Booking ID is required to initiate a payment.');
       }
-      // Correctly calls POST /api/v1/payments/initiate/{bookingId}
+      // Send request body expected by POST /api/v1/payments/initiate/{bookingId}
       const data = await api.post<PaymentDto>(
         `/api/v1/payments/initiate/${paymentData.bookingId}`,
-        paymentData
+        { amount: paymentData.amount }
       );
       currentPayment.value = data;
       await fetchAllPayments(); // Refresh list
