@@ -205,6 +205,14 @@ if (!isLoginPage.value && !isPublicPage.value) {
               nav
               class="sidebar-item"
             />
+            <v-list-item
+              prepend-icon="mdi-clipboard-text-clock-outline"
+              title="Журнал действий"
+              to="/audit-log"
+              rounded="lg"
+              nav
+              class="sidebar-item"
+            />
           </v-list>
 
           <v-divider class="mx-3 my-1" />

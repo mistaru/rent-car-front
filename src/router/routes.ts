@@ -88,6 +88,11 @@ const staticRoutes: RouteRecordRaw[] = [
     component: () => import('@/pages/BookingsTableCalendar.vue'),
   },
   {
+    path: '/audit-log',
+    name: 'AuditLog',
+    component: () => import('@/pages/AuditLogAdmin.vue'),
+  },
+  {
     path: '/:catchAll(.*)',
     name: 'NotFound',
     component: () => import('@/pages/NotFound.vue'),

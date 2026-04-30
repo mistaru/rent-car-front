@@ -98,11 +98,13 @@ async function request<T>(method: string, path: string, options: RequestOptions 
 
   let res: Response;
   try {
+    const token = sessionStorage.getItem('token');
     res = await fetch(buildUrl(path, params), {
       method,
       headers: {
         ...(body instanceof FormData ? {} : { 'Content-Type': 'application/json' }),
         Accept: 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
         ...headers,
       },
       body: body instanceof FormData ? body : (body !== undefined ? JSON.stringify(body) : undefined),
