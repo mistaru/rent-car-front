@@ -531,7 +531,7 @@
                       </v-chip>
                       <v-chip
                         v-if="bookingStore.priceBreakdown?.tierName"
-                        size="x-small"
+                        size="small"
                         color="primary"
                         variant="tonal"
                       >
@@ -548,7 +548,7 @@
                         from ${{ bookingStore.selectedVehicle!.minPricePerDay || bookingStore.selectedVehicle!.pricePerDay }}/day
                       </template>
                     </div>
-                    <div class="text-caption text-medium-emphasis">
+                    <div class="text-body-2 text-medium-emphasis">
                       {{ bookingStore.rentalDays }} day(s)
                     </div>
                   </div>
@@ -826,13 +826,15 @@ function openConfirmDialog() {
 }
 
 async function handleConfirmBooking() {
-  confirmDialog.value = false;
   let bookingId: number | undefined;
   try {
     bookingId = await bookingStore.confirmBooking();
   } catch (e: any) {
-    // Error is handled globally by the API interceptor
+    // Error is handled globally by the API interceptor — keep dialog open so user can retry
+    return;
   }
+
+  confirmDialog.value = false;
 
   // Upload documents even if payment failed — booking may already exist
   if (bookingId) {

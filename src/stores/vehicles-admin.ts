@@ -62,7 +62,26 @@ export interface VehicleImage {
   mimeType: string;
   main: boolean;
   sortOrder: number;
-  url: string; // относительный путь, используй BASE_URL + url
+  url: string;
+}
+
+export interface PriceTier {
+  id?: number;
+  minDays: number;
+  maxDays: number | null;
+  pricePerDay: number;
+}
+
+export interface PricingTemplate {
+  id: number;
+  name: string;
+  description: string;
+  currency: string;
+  active: boolean;
+  minPricePerDay: number | null;
+  tiers: PriceTier[];
+  createdAt: string;
+  updatedAt: string;
 }
 
 export const useVehiclesAdminStore = defineStore('vehicles-admin', () => {
@@ -70,6 +89,7 @@ export const useVehiclesAdminStore = defineStore('vehicles-admin', () => {
   const vehicleImages = ref<Record<number, VehicleImage[]>>({});
   const locations = ref<LocationItem[]>([]);
   const blockedPeriods = ref<BlockedPeriod[]>([]);
+  const pricingTemplates = ref<PricingTemplate[]>([]);
   const loading = ref(false);
 
   async function fetchAllVehicles() {
@@ -219,6 +239,60 @@ export const useVehiclesAdminStore = defineStore('vehicles-admin', () => {
     }
   }
 
+  // ===== Pricing Templates =====
+
+  async function fetchPricingTemplates() {
+    try {
+      pricingTemplates.value = await api.get<PricingTemplate[]>('/api/v1/pricing-templates');
+    } catch (e) {
+      console.error('fetchPricingTemplates error:', e);
+    }
+  }
+
+  async function createPricingTemplate(data: { name: string; description: string; currency: string; tiers: PriceTier[] }): Promise<PricingTemplate | null> {
+    try {
+      const created = await api.post<PricingTemplate>('/api/v1/pricing-templates', data);
+      await fetchPricingTemplates();
+      return created;
+    } catch (e: any) {
+      console.error('createPricingTemplate error:', e);
+      throw e;
+    }
+  }
+
+  async function updatePricingTemplate(id: number, data: { name: string; description: string; currency: string; tiers: PriceTier[] }): Promise<PricingTemplate | null> {
+    try {
+      const updated = await api.put<PricingTemplate>(`/api/v1/pricing-templates/${id}`, data);
+      await fetchPricingTemplates();
+      return updated;
+    } catch (e: any) {
+      console.error('updatePricingTemplate error:', e);
+      throw e;
+    }
+  }
+
+  async function deletePricingTemplate(id: number): Promise<boolean> {
+    try {
+      await api.delete(`/api/v1/pricing-templates/${id}`);
+      await fetchPricingTemplates();
+      return true;
+    } catch (e: any) {
+      console.error('deletePricingTemplate error:', e);
+      throw e;
+    }
+  }
+
+  async function togglePricingTemplateActive(id: number): Promise<PricingTemplate | null> {
+    try {
+      const updated = await api.post<PricingTemplate>(`/api/v1/pricing-templates/${id}/toggle-active`);
+      await fetchPricingTemplates();
+      return updated;
+    } catch (e) {
+      console.error('togglePricingTemplateActive error:', e);
+      return null;
+    }
+  }
+
   return {
     vehicles,
     vehicleImages,
@@ -239,6 +313,12 @@ export const useVehiclesAdminStore = defineStore('vehicles-admin', () => {
     createBlockedPeriod,
     updateBlockedPeriod,
     deleteBlockedPeriod,
+    pricingTemplates,
+    fetchPricingTemplates,
+    createPricingTemplate,
+    updatePricingTemplate,
+    deletePricingTemplate,
+    togglePricingTemplateActive,
   };
 });
 

@@ -118,6 +118,25 @@ const statusConfig: Record<string, { color: string; icon: string; label: string 
 
 const carClassOptions = ['Economy', 'Comfort', 'Business', 'Premium', 'Luxury Sedan', 'Sports Car', 'SUV', 'Electric', 'Off-Road'];
 
+const pricingTemplateOptions = computed(() => {
+  return store.pricingTemplates.map(t => ({
+    title: `${t.name}${t.active ? '' : ' (неактивен)'}${t.minPricePerDay ? ` — от $${t.minPricePerDay}` : ''}`,
+    value: t.id,
+  }));
+});
+
+const selectedTemplateTiers = computed(() => {
+  if (!form.value.pricingTemplateId) return [];
+  const tmpl = store.pricingTemplates.find(t => t.id === form.value.pricingTemplateId);
+  return tmpl?.tiers || [];
+});
+
+const selectedTemplateMinPrice = computed(() => {
+  if (!form.value.pricingTemplateId) return null;
+  const tmpl = store.pricingTemplates.find(t => t.id === form.value.pricingTemplateId);
+  return tmpl?.minPricePerDay ?? null;
+});
+
 const formStatusOptions = [
   { title: 'Доступен', value: 'available' },
   { title: 'Зарезервирован', value: 'reserved' },
@@ -176,7 +195,7 @@ const clearDateFilter = () => {
 const fetchData = async () => {
   loading.value = true;
   try {
-    await Promise.all([store.fetchAllVehicles(), store.fetchLocations(), store.fetchBlockedPeriods()]);
+    await Promise.all([store.fetchAllVehicles(), store.fetchLocations(), store.fetchBlockedPeriods(), store.fetchPricingTemplates()]);
   } finally {
     loading.value = false;
   }
@@ -662,12 +681,14 @@ onMounted(async () => {
             <v-col cols="12" sm="6">
               <v-text-field
                 v-model.number="form.pricePerDay"
-                label="Цена за день ($)"
+                label="Базовая цена за день ($)"
                 variant="outlined"
                 rounded="lg"
                 density="comfortable"
                 type="number"
                 :rules="[v => v > 0 || 'Укажите цену']"
+                hint="Используется если тарифный шаблон не назначен"
+                persistent-hint
               />
             </v-col>
 
@@ -683,6 +704,59 @@ onMounted(async () => {
                 rounded="lg"
                 density="comfortable"
               />
+            </v-col>
+
+            <!-- Pricing Template -->
+            <v-col cols="12" sm="6">
+              <v-select
+                v-model="form.pricingTemplateId"
+                :items="pricingTemplateOptions"
+                item-title="title"
+                item-value="value"
+                label="Тарифный шаблон"
+                variant="outlined"
+                rounded="lg"
+                density="comfortable"
+                clearable
+                hint="Динамическая цена в зависимости от длительности аренды"
+                persistent-hint
+              />
+            </v-col>
+
+            <!-- Pricing Tiers Preview -->
+            <v-col cols="12" v-if="selectedTemplateTiers.length">
+              <v-card elevation="0" rounded="lg" style="border: 1px solid rgba(103,58,183,0.15); background: rgba(103,58,183,0.02)">
+                <v-card-text class="pa-4">
+                  <div class="d-flex align-center ga-2 mb-3">
+                    <v-icon size="18" color="primary">mdi-cash-multiple</v-icon>
+                    <span class="text-body-2 font-weight-bold text-uppercase" style="letter-spacing:0.05em; color: rgba(0,0,0,0.5)">
+                      Тарифы по длительности аренды
+                    </span>
+                    <v-spacer />
+                    <v-chip size="x-small" color="success" variant="tonal" v-if="selectedTemplateMinPrice">
+                      от ${{ selectedTemplateMinPrice }}
+                    </v-chip>
+                  </div>
+                  <v-table density="compact" class="rounded-lg" style="background: transparent">
+                    <thead>
+                      <tr>
+                        <th class="text-left text-caption font-weight-bold">Диапазон</th>
+                        <th class="text-right text-caption font-weight-bold">Цена/день</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr v-for="tier in selectedTemplateTiers" :key="tier.minDays">
+                        <td class="text-body-2">
+                          {{ tier.minDays }}–{{ tier.maxDays ? tier.maxDays : '∞' }} дней
+                        </td>
+                        <td class="text-right text-body-2 font-weight-bold text-primary">
+                          ${{ tier.pricePerDay }}
+                        </td>
+                      </tr>
+                    </tbody>
+                  </v-table>
+                </v-card-text>
+              </v-card>
             </v-col>
 
             <!-- Location -->

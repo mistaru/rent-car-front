@@ -1,17 +1,16 @@
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
 
+let _counter = 0;
+
 export const useNotificationStore = defineStore('notifications', () => {
   const notifications = ref<{ id: number; type: string; message: string }[]>([]);
 
   const addNotification = (type: 'success' | 'error' | 'warning', message: string, timeout = 5000) => {
-    const existingNotif = notifications.value.find(notif => notif.message === message);
+    // Remove any existing notification with the same message immediately (no animation delay)
+    notifications.value = notifications.value.filter(n => n.message !== message);
 
-    if (existingNotif) {
-      removeNotification(existingNotif.id);
-    }
-
-    const id = Date.now();
+    const id = ++_counter;
     notifications.value.push({ id, type, message });
 
     setTimeout(() => removeNotification(id), timeout);

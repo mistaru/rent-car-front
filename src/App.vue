@@ -190,6 +190,14 @@ if (!isLoginPage.value && !isPublicPage.value) {
               class="sidebar-item"
             />
             <v-list-item
+              prepend-icon="mdi-cash-multiple"
+              title="Тарифы"
+              to="/pricing-templates"
+              rounded="lg"
+              nav
+              class="sidebar-item"
+            />
+            <v-list-item
               prepend-icon="mdi-cash-register"
               title="Платежи"
               to="/payments-admin"
