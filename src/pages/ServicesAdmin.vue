@@ -12,6 +12,7 @@ interface ServiceOption {
   category: string;
   icon: string;
   pricePerDay: number;
+  pricingType: string;
   active: boolean;
   sortOrder: number;
   totalQuantity: number | null;
@@ -26,6 +27,7 @@ interface ServiceOptionForm {
   category: string;
   icon: string;
   pricePerDay: number;
+  pricingType: string;
   active: boolean;
   sortOrder: number;
   totalQuantity: number | null;
@@ -47,6 +49,7 @@ const emptyForm = (): ServiceOptionForm => ({
   category: 'EQUIPMENT',
   icon: 'mdi-plus-box',
   pricePerDay: 0,
+  pricingType: 'PER_DAY',
   active: true,
   sortOrder: 0,
   totalQuantity: null,
@@ -59,7 +62,7 @@ const headers = [
   { title: 'Код', key: 'code', width: '160px' },
   { title: 'Название', key: 'name' },
   { title: 'Категория', key: 'category', width: '140px' },
-  { title: 'Цена/день', key: 'pricePerDay', align: 'end' as const, width: '110px' },
+  { title: 'Цена', key: 'pricePerDay', align: 'end' as const, width: '130px' },
   { title: 'Запас', key: 'inventory', align: 'center' as const, width: '100px' },
   { title: 'Статус', key: 'active', align: 'center' as const, width: '100px' },
   { title: '', key: 'actions', sortable: false, width: '120px', align: 'center' as const },
@@ -71,6 +74,11 @@ const categoryOptions = [
   { title: '🚗 Доставка', value: 'DELIVERY' },
   { title: '📄 Документы', value: 'DOCUMENTS' },
   { title: '📦 Другое', value: 'OTHER' },
+];
+
+const pricingTypeOptions = [
+  { title: 'За день', value: 'PER_DAY' },
+  { title: 'Разовая', value: 'ONE_TIME' },
 ];
 
 const categoryConfig: Record<string, { color: string; icon: string; label: string }> = {
@@ -101,7 +109,11 @@ const activeCount = computed(() => items.value.filter(i => i.active).length);
 async function fetchAll() {
   loading.value = true;
   try {
-    items.value = await api.get<ServiceOption[]>(`/api/v1/service-options`);
+    const raw = await api.get<any[]>(`/api/v1/service-options`);
+    items.value = raw.map(item => ({
+      ...item,
+      pricingType: typeof item.pricingType === 'object' ? item.pricingType?.value ?? 'PER_DAY' : item.pricingType,
+    }));
   } catch (e) {
     console.error('fetch error:', e);
   } finally {
@@ -126,6 +138,7 @@ function openEdit(item: ServiceOption) {
     category: item.category,
     icon: item.icon || 'mdi-plus-box',
     pricePerDay: item.pricePerDay,
+    pricingType: item.pricingType || 'PER_DAY',
     active: item.active,
     sortOrder: item.sortOrder,
     totalQuantity: item.totalQuantity,
@@ -266,6 +279,9 @@ onMounted(fetchAll);
         <!-- Price -->
         <template #item.pricePerDay="{ item }">
           <span class="text-body-2 font-weight-bold">{{ formatMoney(item.pricePerDay) }}</span>
+          <v-chip size="x-small" :color="item.pricingType === 'ONE_TIME' ? 'info' : 'grey'" variant="tonal" class="ml-1">
+            {{ item.pricingType === 'ONE_TIME' ? 'разовая' : '/день' }}
+          </v-chip>
         </template>
 
         <!-- Inventory -->
@@ -363,14 +379,27 @@ onMounted(fetchAll);
                             placeholder="mdi-tent" />
             </v-col>
             <v-col cols="12" sm="4">
-              <v-text-field v-model.number="form.pricePerDay" label="Цена/день ($)" type="number"
+              <v-text-field v-model.number="form.pricePerDay" :label="form.pricingType === 'ONE_TIME' ? 'Цена ($)' : 'Цена/день ($)'" type="number"
                 variant="outlined" rounded="lg" density="comfortable" min="0" step="0.01" />
             </v-col>
             <v-col cols="12" sm="4">
+              <v-select
+                v-model="form.pricingType"
+                :items="pricingTypeOptions"
+                label="Тип цены"
+                item-title="title"
+                item-value="value"
+                :return-object="false"
+                variant="outlined"
+                rounded="lg"
+                density="comfortable"
+              />
+            </v-col>
+            <v-col cols="12" sm="6">
               <v-text-field v-model.number="form.sortOrder" label="Порядок" type="number"
                 variant="outlined" rounded="lg" density="comfortable" min="0" />
             </v-col>
-            <v-col cols="12" sm="4">
+            <v-col cols="12" sm="6">
               <v-text-field
                 v-model.number="form.totalQuantity"
                 label="Кол-во (запас)"
@@ -416,7 +445,7 @@ onMounted(fetchAll);
           <v-icon size="32" :color="categoryConfig[selectedItem.category]?.color">{{ selectedItem.icon }}</v-icon>
           <div>
             <div class="text-body-1 font-weight-bold">{{ selectedItem.name }}</div>
-            <div class="text-body-2 text-medium-emphasis">{{ selectedItem.code }} · {{ formatMoney(selectedItem.pricePerDay) }}/день</div>
+            <div class="text-body-2 text-medium-emphasis">{{ selectedItem.code }} · {{ formatMoney(selectedItem.pricePerDay) }}{{ selectedItem.pricingType === 'ONE_TIME' ? '' : '/день' }}</div>
           </div>
         </div>
       </div>

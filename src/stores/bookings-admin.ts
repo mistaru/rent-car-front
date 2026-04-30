@@ -70,6 +70,7 @@ export interface ServiceOptionItem {
   category: string;
   icon: string;
   pricePerDay: number;
+  pricingType: string;
   totalQuantity: number | null;
   availableQuantity: number | null;
 }

@@ -390,7 +390,7 @@
                           :variant="addon.selected ? 'elevated' : 'tonal'"
                           @click="bookingStore.toggleAddon(addon.id)"
                         >
-                          {{ addon.pricePerDay > 0 ? `+$${addon.pricePerDay}/day` : 'Free' }}
+                          {{ addon.pricePerDay > 0 ? (addon.pricingType === 'ONE_TIME' ? `+$${addon.pricePerDay}` : `+$${addon.pricePerDay}/day`) : 'Free' }}
                         </v-chip>
                         <!-- Quantity controls -->
                         <div v-if="addon.selected && addon.maxQuantity !== 1" class="d-flex align-center justify-center ga-2 mt-3" @click.stop>
@@ -584,10 +584,20 @@
                   class="d-flex justify-space-between mb-2"
                 >
                   <span class="text-body-2 text-medium-emphasis">
-                    {{ addon.title }} ({{ bookingStore.rentalDays }} × ${{ addon.pricePerDay }})
+                    <template v-if="addon.pricingType === 'ONE_TIME'">
+                      {{ addon.title }}{{ addon.quantity > 1 ? ` ×${addon.quantity}` : '' }}
+                    </template>
+                    <template v-else>
+                      {{ addon.title }} ({{ bookingStore.rentalDays }} × ${{ addon.pricePerDay }}{{ addon.quantity > 1 ? ` ×${addon.quantity}` : '' }})
+                    </template>
                   </span>
                   <span class="text-body-2 font-weight-medium">
-                    ${{ addon.pricePerDay * bookingStore.rentalDays }}
+                    <template v-if="addon.pricingType === 'ONE_TIME'">
+                      ${{ addon.pricePerDay * addon.quantity }}
+                    </template>
+                    <template v-else>
+                      ${{ addon.pricePerDay * bookingStore.rentalDays * addon.quantity }}
+                    </template>
                   </span>
                 </div>
 

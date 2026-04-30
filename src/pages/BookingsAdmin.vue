@@ -24,7 +24,7 @@ const locations = ref<LocationItem[]>([]);
 // Форма редактирования
 const editForm = ref<UpdateBookingData>({});
 const editSaving = ref(false);
-const editAddOns = ref<Array<{ code: string; name: string; quantity: number; maxQuantity: number | null; pricePerDay: number }>>([]);
+const editAddOns = ref<Array<{ code: string; name: string; quantity: number; maxQuantity: number | null; pricePerDay: number; pricingType: string }>>([]);
 
 // Управление документами
 interface BookingDocument {
@@ -238,6 +238,7 @@ const openEdit = (booking: BookingAdmin) => {
       quantity: existingQty,
       maxQuantity: available,
       pricePerDay: opt.pricePerDay,
+      pricingType: opt.pricingType || 'PER_DAY',
     };
   });
   editDialog.value = true;
@@ -950,7 +951,7 @@ onMounted(fetchBookings);
                 <thead>
                   <tr>
                     <th>Услуга</th>
-                    <th class="text-center" style="width: 80px">Цена/день</th>
+                    <th class="text-center" style="width: 100px">Цена</th>
                     <th class="text-center" style="width: 140px">Количество</th>
                   </tr>
                 </thead>
@@ -961,7 +962,10 @@ onMounted(fetchBookings);
                       <v-chip v-if="addon.maxQuantity === 0" size="x-small" color="grey" variant="tonal" class="ml-1">нет в наличии</v-chip>
                       <span v-else-if="addon.maxQuantity != null" class="text-caption text-medium-emphasis ml-1">(доступно: {{ addon.maxQuantity }})</span>
                     </td>
-                    <td class="text-center text-body-2">${{ addon.pricePerDay }}</td>
+                    <td class="text-center text-body-2">
+                      ${{ addon.pricePerDay }}
+                      <span class="text-caption text-medium-emphasis">{{ addon.pricingType === 'ONE_TIME' ? '' : '/день' }}</span>
+                    </td>
                     <td class="text-center">
                       <div class="d-flex align-center justify-center ga-1">
                         <v-btn

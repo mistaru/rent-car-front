@@ -26,6 +26,7 @@ export interface AddonOption {
   description: string;
   icon: string;
   pricePerDay: number;
+  pricingType: 'PER_DAY' | 'ONE_TIME';
   selected: boolean;
   quantity: number;
   maxQuantity: number | null; // null = unlimited (e.g. documents/delivery)
@@ -47,7 +48,7 @@ export interface PriceBreakdown {
   pricePerDay: number;
   baseAmount: number;
   tierName: string | null;
-  addOnItems: Array<{ name: string; code: string; pricePerDay: number; quantity: number; total: number }>;
+  addOnItems: Array<{ name: string; code: string; pricePerDay: number; quantity: number; total: number; pricingType?: string }>;
   addOnsAmount: number;
   serviceFee: number;
   totalAmount: number;
@@ -89,6 +90,7 @@ export const useBookingStore = defineStore('booking', () => {
       const data = await api.get<Array<{
         id: number; code: string; name: string; description: string;
         category: string; icon: string; pricePerDay: number;
+        pricingType: string;
         totalQuantity: number | null;
         availableQuantity: number | null;
       }>>('/api/v1/service-options/active');
@@ -99,6 +101,7 @@ export const useBookingStore = defineStore('booking', () => {
         description: opt.description || '',
         icon: opt.icon || 'mdi-plus-box',
         pricePerDay: opt.pricePerDay,
+        pricingType: (((typeof opt.pricingType === 'object' && opt.pricingType !== null) ? (opt.pricingType as any).value : opt.pricingType) === 'ONE_TIME' ? 'ONE_TIME' : 'PER_DAY') as 'PER_DAY' | 'ONE_TIME',
         selected: false,
         quantity: 1,
         maxQuantity: opt.availableQuantity ?? opt.totalQuantity,
@@ -129,7 +132,12 @@ export const useBookingStore = defineStore('booking', () => {
     if (priceBreakdown.value) return priceBreakdown.value.addOnsAmount || 0;
     return addons.value
       .filter((a: AddonOption) => a.selected)
-      .reduce((sum: number, a: AddonOption) => sum + a.pricePerDay * a.quantity * rentalDays.value, 0);
+      .reduce((sum: number, a: AddonOption) => {
+        const price = a.pricingType === 'ONE_TIME'
+          ? a.pricePerDay * a.quantity
+          : a.pricePerDay * a.quantity * rentalDays.value;
+        return sum + price;
+      }, 0);
   });
 
   /** Доп. услуги, сгруппированные по категориям */
