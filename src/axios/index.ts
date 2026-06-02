@@ -7,11 +7,11 @@ const dnsMapper:Record<string, string> = {
   '178.104.61.164': 'http://178.104.61.164:8080/api',
   '178.105.184.173': 'http://178.105.184.173:8080/api',
 };
+
 const getBaseUrl = () => {
   const matchedKey = Object.keys(dnsMapper).find(key => origin.includes(key));
-  return matchedKey ? dnsMapper[matchedKey] : dnsMapper.test;
+  return matchedKey ? dnsMapper[matchedKey] : 'http://178.105.184.173:8080/api';
 };
-
 const axiosIns = axios.create({
   baseURL: getBaseUrl(),
   headers: {
