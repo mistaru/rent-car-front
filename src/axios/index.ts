@@ -4,7 +4,7 @@ import router from '../router/index';
 const origin = window.location.origin;
 const dnsMapper:Record<string, string> = {
   'localhost': 'http://localhost:8081/api',
-  '178.105.184.173': 'http://178.105.184.173:8080/api',
+  '178.104.61.164': 'http://178.104.61.164:8080/api',
   '178.105.184.173': 'http://178.105.184.173:8080/api',
 };
 
