@@ -10,6 +10,7 @@ const store = useBookingsAdminStore();
 const loading = ref(false);
 const detailDialog = ref(false);
 const cancelDialog = ref(false);
+const deleteDialog = ref(false);
 const editDialog = ref(false);
 const selectedBooking = ref<BookingAdmin | null>(null);
 const statusFilter = ref('all');
@@ -281,6 +282,23 @@ const confirmCancel = async () => {
   }
 };
 
+const openDeleteDialog = (booking: BookingAdmin) => {
+  selectedBooking.value = booking;
+  deleteDialog.value = true;
+};
+
+const confirmDelete = async () => {
+  if (!selectedBooking.value) return;
+  try {
+    await store.deleteBooking(selectedBooking.value.id);
+    deleteDialog.value = false;
+    selectedBooking.value = null;
+    await store.fetchServiceOptions();
+  } catch (e) {
+    // error handled in store
+  }
+};
+
 const formatDate = (d: string) => {
   if (!d) return '';
   return new Date(d).toLocaleDateString('ru-RU', { day: '2-digit', month: 'short' });
@@ -530,6 +548,13 @@ onMounted(fetchBookings);
               <template #activator="{ props }">
                 <v-btn v-bind="props" icon variant="text" size="small" color="error" @click="openCancelDialog(item)">
                   <v-icon size="20">mdi-cancel</v-icon>
+                </v-btn>
+              </template>
+            </v-tooltip>
+            <v-tooltip text="Удалить" location="top">
+              <template #activator="{ props }">
+                <v-btn v-bind="props" icon variant="text" size="small" color="error" @click="openDeleteDialog(item)">
+                  <v-icon size="20">mdi-delete-outline</v-icon>
                 </v-btn>
               </template>
             </v-tooltip>
@@ -1153,6 +1178,37 @@ onMounted(fetchBookings);
       <div v-if="selectedBooking">
         <v-alert type="warning" variant="tonal" class="mb-4" density="compact">
           Это действие нельзя отменить. Автомобиль станет доступен для других бронирований.
+        </v-alert>
+        <div class="d-flex align-center ga-3 mb-3">
+          <v-avatar size="40" rounded="lg">
+            <v-img :src="selectedBooking.vehicle.image" cover />
+          </v-avatar>
+          <div>
+            <div class="text-body-2 font-weight-bold">
+              {{ selectedBooking.vehicle.brand }} {{ selectedBooking.vehicle.model }}
+            </div>
+            <div class="text-caption text-medium-emphasis">
+              {{ selectedBooking.customer.fullName }} · {{ formatDateFull(selectedBooking.pickupDate) }} — {{ formatDateFull(selectedBooking.dropoffDate) }}
+            </div>
+          </div>
+        </div>
+        <div class="text-body-1 font-weight-bold">
+          Сумма: {{ formatMoney(selectedBooking.totalAmount) }}
+        </div>
+      </div>
+    </ModalDialog>
+
+    <!-- Delete Confirmation Dialog -->
+    <ModalDialog
+      v-model:dialog="deleteDialog"
+      title="Удаление бронирования"
+      confirm-text="Удалить"
+      @confirm="confirmDelete"
+      @close="deleteDialog = false"
+    >
+      <div v-if="selectedBooking">
+        <v-alert type="error" variant="tonal" class="mb-4" density="compact">
+          Бронирование будет удалено безвозвратно вместе со всеми платежами и документами.
         </v-alert>
         <div class="d-flex align-center ga-3 mb-3">
           <v-avatar size="40" rounded="lg">

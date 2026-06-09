@@ -130,6 +130,16 @@ export const useBookingsAdminStore = defineStore('bookingsAdmin', () => {
     }
   }
 
+  async function deleteBooking(id: number) {
+    try {
+      await api.delete(`/api/v1/bookings/${id}`);
+      await fetchAllBookings();
+    } catch (e: any) {
+      error.value = e.message || 'Ошибка';
+      throw e;
+    }
+  }
+
   return {
     bookings,
     loading,
@@ -138,6 +148,7 @@ export const useBookingsAdminStore = defineStore('bookingsAdmin', () => {
     fetchAllBookings,
     cancelBooking,
     updateBooking,
+    deleteBooking,
     fetchBookingHistory,
     fetchServiceOptions,
   };
