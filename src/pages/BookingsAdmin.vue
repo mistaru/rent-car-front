@@ -10,6 +10,7 @@ const store = useBookingsAdminStore();
 const loading = ref(false);
 const detailDialog = ref(false);
 const cancelDialog = ref(false);
+const deleteDialog = ref(false);
 const editDialog = ref(false);
 const selectedBooking = ref<BookingAdmin | null>(null);
 const statusFilter = ref('all');
@@ -281,6 +282,23 @@ const confirmCancel = async () => {
   }
 };
 
+const openDeleteDialog = (booking: BookingAdmin) => {
+  selectedBooking.value = booking;
+  deleteDialog.value = true;
+};
+
+const confirmDelete = async () => {
+  if (!selectedBooking.value) return;
+  try {
+    await store.deleteBooking(selectedBooking.value.id);
+    deleteDialog.value = false;
+    selectedBooking.value = null;
+    await store.fetchServiceOptions();
+  } catch (e) {
+    // error handled in store
+  }
+};
+
 const formatDate = (d: string) => {
   if (!d) return '';
   return new Date(d).toLocaleDateString('ru-RU', { day: '2-digit', month: 'short' });
@@ -533,6 +551,13 @@ onMounted(fetchBookings);
                 </v-btn>
               </template>
             </v-tooltip>
+            <v-tooltip text="Удалить" location="top">
+              <template #activator="{ props }">
+                <v-btn v-bind="props" icon variant="text" size="small" color="error" @click="openDeleteDialog(item)">
+                  <v-icon size="20">mdi-delete-outline</v-icon>
+                </v-btn>
+              </template>
+            </v-tooltip>
           </div>
         </template>
 
@@ -667,22 +692,22 @@ onMounted(fetchBookings);
                     </div>
                     <table class="pricing-table">
                       <tbody>
-                        <tr>
-                          <td class="text-body-2 text-medium-emphasis">{{ selectedBooking.days }}д × {{ formatMoney(selectedBooking.pricePerDay) }}</td>
-                          <td class="text-body-1 text-right">{{ formatMoney(selectedBooking.baseAmount) }}</td>
-                        </tr>
-                        <tr>
-                          <td class="text-body-2 text-medium-emphasis">Доп. услуги</td>
-                          <td class="text-body-1 text-right">{{ formatMoney(selectedBooking.addOnsAmount) }}</td>
-                        </tr>
-                        <tr>
-                          <td class="text-body-2 text-medium-emphasis">Сервисный сбор</td>
-                          <td class="text-body-1 text-right">{{ formatMoney(selectedBooking.serviceFee) }}</td>
-                        </tr>
-                        <tr class="pricing-total">
-                          <td class="text-body-1 font-weight-bold">Итого</td>
-                          <td class="text-h6 font-weight-bold text-right text-primary">{{ formatMoney(selectedBooking.totalAmount) }}</td>
-                        </tr>
+                      <tr>
+                        <td class="text-body-2 text-medium-emphasis">{{ selectedBooking.days }}д × {{ formatMoney(selectedBooking.pricePerDay) }}</td>
+                        <td class="text-body-1 text-right">{{ formatMoney(selectedBooking.baseAmount) }}</td>
+                      </tr>
+                      <tr>
+                        <td class="text-body-2 text-medium-emphasis">Доп. услуги</td>
+                        <td class="text-body-1 text-right">{{ formatMoney(selectedBooking.addOnsAmount) }}</td>
+                      </tr>
+                      <tr>
+                        <td class="text-body-2 text-medium-emphasis">Сервисный сбор</td>
+                        <td class="text-body-1 text-right">{{ formatMoney(selectedBooking.serviceFee) }}</td>
+                      </tr>
+                      <tr class="pricing-total">
+                        <td class="text-body-1 font-weight-bold">Итого</td>
+                        <td class="text-h6 font-weight-bold text-right text-primary">{{ formatMoney(selectedBooking.totalAmount) }}</td>
+                      </tr>
                       </tbody>
                     </table>
                     <div class="d-flex align-center ga-2 mt-2">
@@ -949,47 +974,47 @@ onMounted(fetchBookings);
             <v-col cols="12">
               <v-table density="compact" class="rounded-lg">
                 <thead>
-                  <tr>
-                    <th>Услуга</th>
-                    <th class="text-center" style="width: 100px">Цена</th>
-                    <th class="text-center" style="width: 140px">Количество</th>
-                  </tr>
+                <tr>
+                  <th>Услуга</th>
+                  <th class="text-center" style="width: 100px">Цена</th>
+                  <th class="text-center" style="width: 140px">Количество</th>
+                </tr>
                 </thead>
                 <tbody>
-                  <tr v-for="addon in editAddOns" :key="addon.code" :class="{ 'text-grey': addon.maxQuantity === 0 }">
-                    <td class="text-body-2">
-                      {{ addon.name }}
-                      <v-chip v-if="addon.maxQuantity === 0" size="x-small" color="grey" variant="tonal" class="ml-1">нет в наличии</v-chip>
-                      <span v-else-if="addon.maxQuantity != null" class="text-caption text-medium-emphasis ml-1">(доступно: {{ addon.maxQuantity }})</span>
-                    </td>
-                    <td class="text-center text-body-2">
-                      ${{ addon.pricePerDay }}
-                      <span class="text-caption text-medium-emphasis">{{ addon.pricingType === 'ONE_TIME' ? '' : '/день' }}</span>
-                    </td>
-                    <td class="text-center">
-                      <div class="d-flex align-center justify-center ga-1">
-                        <v-btn
-                          icon
-                          size="x-small"
-                          variant="text"
-                          :disabled="addon.quantity <= 0 || addon.maxQuantity === 0"
-                          @click="addon.quantity = Math.max(0, addon.quantity - 1)"
-                        >
-                          <v-icon size="16">mdi-minus</v-icon>
-                        </v-btn>
-                        <span class="text-body-2 font-weight-bold" style="min-width: 24px; text-align: center">{{ addon.quantity }}</span>
-                        <v-btn
-                          icon
-                          size="x-small"
-                          variant="text"
-                          :disabled="addon.maxQuantity != null && addon.quantity >= addon.maxQuantity"
-                          @click="addon.quantity++"
-                        >
-                          <v-icon size="16">mdi-plus</v-icon>
-                        </v-btn>
-                      </div>
-                    </td>
-                  </tr>
+                <tr v-for="addon in editAddOns" :key="addon.code" :class="{ 'text-grey': addon.maxQuantity === 0 }">
+                  <td class="text-body-2">
+                    {{ addon.name }}
+                    <v-chip v-if="addon.maxQuantity === 0" size="x-small" color="grey" variant="tonal" class="ml-1">нет в наличии</v-chip>
+                    <span v-else-if="addon.maxQuantity != null" class="text-caption text-medium-emphasis ml-1">(доступно: {{ addon.maxQuantity }})</span>
+                  </td>
+                  <td class="text-center text-body-2">
+                    ${{ addon.pricePerDay }}
+                    <span class="text-caption text-medium-emphasis">{{ addon.pricingType === 'ONE_TIME' ? '' : '/день' }}</span>
+                  </td>
+                  <td class="text-center">
+                    <div class="d-flex align-center justify-center ga-1">
+                      <v-btn
+                        icon
+                        size="x-small"
+                        variant="text"
+                        :disabled="addon.quantity <= 0 || addon.maxQuantity === 0"
+                        @click="addon.quantity = Math.max(0, addon.quantity - 1)"
+                      >
+                        <v-icon size="16">mdi-minus</v-icon>
+                      </v-btn>
+                      <span class="text-body-2 font-weight-bold" style="min-width: 24px; text-align: center">{{ addon.quantity }}</span>
+                      <v-btn
+                        icon
+                        size="x-small"
+                        variant="text"
+                        :disabled="addon.maxQuantity != null && addon.quantity >= addon.maxQuantity"
+                        @click="addon.quantity++"
+                      >
+                        <v-icon size="16">mdi-plus</v-icon>
+                      </v-btn>
+                    </div>
+                  </td>
+                </tr>
                 </tbody>
               </v-table>
             </v-col>
@@ -1153,6 +1178,37 @@ onMounted(fetchBookings);
       <div v-if="selectedBooking">
         <v-alert type="warning" variant="tonal" class="mb-4" density="compact">
           Это действие нельзя отменить. Автомобиль станет доступен для других бронирований.
+        </v-alert>
+        <div class="d-flex align-center ga-3 mb-3">
+          <v-avatar size="40" rounded="lg">
+            <v-img :src="selectedBooking.vehicle.image" cover />
+          </v-avatar>
+          <div>
+            <div class="text-body-2 font-weight-bold">
+              {{ selectedBooking.vehicle.brand }} {{ selectedBooking.vehicle.model }}
+            </div>
+            <div class="text-caption text-medium-emphasis">
+              {{ selectedBooking.customer.fullName }} · {{ formatDateFull(selectedBooking.pickupDate) }} — {{ formatDateFull(selectedBooking.dropoffDate) }}
+            </div>
+          </div>
+        </div>
+        <div class="text-body-1 font-weight-bold">
+          Сумма: {{ formatMoney(selectedBooking.totalAmount) }}
+        </div>
+      </div>
+    </ModalDialog>
+
+    <!-- Delete Confirmation Dialog -->
+    <ModalDialog
+      v-model:dialog="deleteDialog"
+      title="Удаление бронирования"
+      confirm-text="Удалить"
+      @confirm="confirmDelete"
+      @close="deleteDialog = false"
+    >
+      <div v-if="selectedBooking">
+        <v-alert type="error" variant="tonal" class="mb-4" density="compact">
+          Бронирование будет удалено безвозвратно вместе со всеми платежами и документами.
         </v-alert>
         <div class="d-flex align-center ga-3 mb-3">
           <v-avatar size="40" rounded="lg">
