@@ -9,7 +9,7 @@ export interface VehicleAdmin {
   licensePlate: string;
   pricePerDay: number;
   minPricePerDay: number | null;
-  image: string;
+  images: string[];
   status: string;
   carClass: string;
   pricingTemplateName: string | null;
@@ -23,7 +23,6 @@ export interface VehicleFormData {
   licensePlate: string;
   pricePerDay: number;
   minPricePerDay: number | null;
-  image: string;
   carClass: string;
   status: string;
   locationId: number | null;

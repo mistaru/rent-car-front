@@ -8,7 +8,6 @@ export interface Vehicle {
   model: string;
   pricePerDay: number;
   minPricePerDay: number | null;
-  image: string;
   images: string[];
   status: 'available' | 'booked' | 'unavailable';
   carClass: string;

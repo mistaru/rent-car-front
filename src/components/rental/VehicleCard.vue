@@ -13,7 +13,7 @@
     <!-- Image -->
     <div class="vehicle-card__image-wrapper">
       <v-img
-        :src="vehicle.image"
+        :src="vehicle.images?.[0] || ''"
         :alt="`${vehicle.brand} ${vehicle.model}`"
         height="200"
         cover

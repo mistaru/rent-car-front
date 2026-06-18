@@ -466,7 +466,7 @@ onMounted(fetchBookings);
         <template #item.vehicle="{ item }">
           <div class="d-flex align-center ga-3 py-2">
             <v-avatar size="42" rounded="lg" class="vehicle-avatar">
-              <v-img :src="item.vehicle.image" cover />
+              <v-img :src="item.vehicle.images?.[0]" cover />
             </v-avatar>
             <div>
               <div class="text-body-2 font-weight-bold">{{ item.vehicle.brand }} {{ item.vehicle.model }}</div>
@@ -580,7 +580,7 @@ onMounted(fetchBookings);
           <div class="d-flex align-center justify-space-between">
             <div class="d-flex align-center ga-3">
               <v-avatar size="52" rounded="lg" class="vehicle-avatar">
-                <v-img :src="selectedBooking.vehicle.image" cover />
+                <v-img :src="selectedBooking.vehicle.images?.[0]" cover />
               </v-avatar>
               <BookingDocumentsPanel :booking-id="selectedBooking.id" />
               <div>
@@ -1181,7 +1181,7 @@ onMounted(fetchBookings);
         </v-alert>
         <div class="d-flex align-center ga-3 mb-3">
           <v-avatar size="40" rounded="lg">
-            <v-img :src="selectedBooking.vehicle.image" cover />
+            <v-img :src="selectedBooking.vehicle.images?.[0]" cover />
           </v-avatar>
           <div>
             <div class="text-body-2 font-weight-bold">
@@ -1212,7 +1212,7 @@ onMounted(fetchBookings);
         </v-alert>
         <div class="d-flex align-center ga-3 mb-3">
           <v-avatar size="40" rounded="lg">
-            <v-img :src="selectedBooking.vehicle.image" cover />
+            <v-img :src="selectedBooking.vehicle.images?.[0]" cover />
           </v-avatar>
           <div>
             <div class="text-body-2 font-weight-bold">

@@ -4,7 +4,6 @@ import { useVehiclesAdminStore } from '@/stores/vehicles-admin';
 import type { VehicleAdmin, VehicleFormData, BlockedPeriod, CreateBlockedPeriodData } from '@/stores/vehicles-admin';
 import ModalDialog from '@/components/UserModal.vue';
 import CarImageCarousel from '@/components/rental/CarImageCarousel.vue';
-import { BASE_URL } from '@/axios/api';
 import api from '@/axios/api';
 
 const store = useVehiclesAdminStore();
@@ -57,7 +56,6 @@ const emptyForm = (): VehicleFormData => ({
   licensePlate: '',
   pricePerDay: 0,
   minPricePerDay: null,
-  image: '',
   carClass: '',
   status: 'available',
   locationId: null,
@@ -92,7 +90,7 @@ const fetchAttributeValues = async (vehicleId: number) => {
 
 const headers = [
   { title: 'ID', key: 'id', width: '60px' },
-  { title: 'Фото', key: 'image', width: '70px', sortable: false },
+  { title: 'Фото', key: 'images', width: '70px', sortable: false },
   { title: 'Марка / Модель', key: 'brand' },
   { title: 'Гос. номер', key: 'licensePlate' },
   { title: 'Класс', key: 'carClass' },
@@ -284,7 +282,6 @@ const openEdit = (vehicle: VehicleAdmin) => {
     licensePlate: vehicle.licensePlate || '',
     pricePerDay: vehicle.pricePerDay,
     minPricePerDay: vehicle.minPricePerDay,
-    image: vehicle.image || '',
     carClass: vehicle.carClass || '',
     status: vehicle.status || 'available',
     locationId: vehicle.locationId,
@@ -353,7 +350,7 @@ const carouselImages = computed(() => {
   return imgs
     .filter(img => !isMarkedForDelete(img.id))
     .sort((a, b) => (a.main ? -1 : 1))
-    .map(img => BASE_URL + img.url);
+    .map(img => img.url);
 });
 
 onMounted(async () => {
@@ -518,9 +515,9 @@ onMounted(async () => {
         class="admin-table"
       >
         <!-- Image -->
-        <template #item.image="{ item }">
+        <template #item.images="{ item }">
           <v-avatar size="44" rounded="lg" class="vehicle-avatar my-1">
-            <v-img v-if="item.image" :src="item.image" cover />
+            <v-img v-if="item.images?.length" :src="item.images[0]" cover />
             <v-icon v-else color="grey-lighten-1">mdi-car</v-icon>
           </v-avatar>
         </template>
@@ -842,31 +839,6 @@ onMounted(async () => {
               </v-row>
             </v-col>
 
-            <!-- Image URL -->
-            <v-col cols="12">
-              <v-text-field
-                v-model="form.image"
-                label="URL изображения"
-                variant="outlined"
-                rounded="lg"
-                density="comfortable"
-                placeholder="https://images.unsplash.com/..."
-                persistent-placeholder
-              />
-            </v-col>
-
-            <!-- Image Preview -->
-            <v-col cols="12" v-if="form.image">
-              <v-card elevation="0" rounded="lg" class="overflow-hidden" style="border: 1px solid rgba(0,0,0,0.06)">
-                <v-img :src="form.image" height="200" cover>
-                  <template #error>
-                    <div class="d-flex align-center justify-center fill-height bg-grey-lighten-3">
-                      <v-icon size="48" color="grey-lighten-1">mdi-image-broken</v-icon>
-                    </div>
-                  </template>
-                </v-img>
-              </v-card>
-            </v-col>
 
             <!-- Images Section (только при редактировании существующего авто) -->
             <v-col cols="12" v-if="isEditing && selectedVehicle">
@@ -888,13 +860,13 @@ onMounted(async () => {
     }"
                 >
                   <v-img
-                    :src="BASE_URL + img.url"
+                    :src="img.url"
                     width="90"
                     height="70"
                     cover
                     rounded="lg"
                     style="cursor: zoom-in"
-                    @click="!isMarkedForDelete(img.id) && openLightbox(BASE_URL + img.url)"
+                    @click="!isMarkedForDelete(img.id) && openLightbox(img.url)"
                   />
 
                   <!-- Оверлей "помечено на удаление" -->
@@ -973,7 +945,7 @@ onMounted(async () => {
         </v-alert>
         <div class="d-flex align-center ga-3">
           <v-avatar size="48" rounded="lg">
-            <v-img v-if="selectedVehicle.image" :src="selectedVehicle.image" cover />
+            <v-img v-if="selectedVehicle.images?.length" :src="selectedVehicle.images[0]" cover />
             <v-icon v-else color="grey-lighten-1">mdi-car</v-icon>
           </v-avatar>
           <div>

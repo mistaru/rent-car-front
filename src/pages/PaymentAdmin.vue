@@ -274,7 +274,7 @@ onMounted(() => {
         <template #item.vehicle="{ item }">
           <div v-if="item.booking" class="d-flex align-center ga-3 py-2">
             <v-avatar size="42" rounded="lg" class="vehicle-avatar">
-              <v-img :src="item.booking.vehicle.image" cover />
+              <v-img :src="item.booking.vehicle.images?.[0]" cover />
             </v-avatar>
             <div>
               <div class="text-body-2 font-weight-bold">
@@ -407,7 +407,7 @@ onMounted(() => {
                     <template #subtitle>
                       <div class="d-flex align-center ga-3 py-2">
                         <v-avatar size="42" rounded="lg" class="vehicle-avatar">
-                          <v-img :src="item.raw.vehicle.image" cover />
+                          <v-img :src="item.raw.vehicle.images?.[0]" cover />
                         </v-avatar>
                         <div>
                           <div class="text-body-2 font-weight-bold">

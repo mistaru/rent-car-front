@@ -23,7 +23,7 @@ export interface BookingAdmin {
     brand: string;
     model: string;
     carClass: string;
-    image: string;
+    images: string[];
   };
   customer: {
     id: number;
