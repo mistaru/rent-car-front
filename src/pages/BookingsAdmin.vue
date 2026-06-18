@@ -1229,6 +1229,37 @@ onMounted(fetchBookings);
       </div>
     </ModalDialog>
 
+    <!-- Delete Confirmation Dialog -->
+    <ModalDialog
+      v-model:dialog="deleteDialog"
+      title="Удаление бронирования"
+      confirm-text="Удалить"
+      @confirm="confirmDelete"
+      @close="deleteDialog = false"
+    >
+      <div v-if="selectedBooking">
+        <v-alert type="error" variant="tonal" class="mb-4" density="compact">
+          Бронирование будет удалено безвозвратно вместе со всеми платежами и документами.
+        </v-alert>
+        <div class="d-flex align-center ga-3 mb-3">
+          <v-avatar size="40" rounded="lg">
+            <v-img :src="selectedBooking.vehicle.image" cover />
+          </v-avatar>
+          <div>
+            <div class="text-body-2 font-weight-bold">
+              {{ selectedBooking.vehicle.brand }} {{ selectedBooking.vehicle.model }}
+            </div>
+            <div class="text-caption text-medium-emphasis">
+              {{ selectedBooking.customer.fullName }} · {{ formatDateFull(selectedBooking.pickupDate) }} — {{ formatDateFull(selectedBooking.dropoffDate) }}
+            </div>
+          </div>
+        </div>
+        <div class="text-body-1 font-weight-bold">
+          Сумма: {{ formatMoney(selectedBooking.totalAmount) }}
+        </div>
+      </div>
+    </ModalDialog>
+
     <!-- Document Preview Dialog -->
     <v-dialog v-model="previewDialog" max-width="800">
       <v-card rounded="xl">
