@@ -24,7 +24,10 @@
               Your request has been successfully submitted.
             </p>
 
-            <v-alert type="success" variant="tonal" rounded="lg" class="text-left mb-4" density="compact">
+            <v-alert
+              v-if="bookingStore.personalInfo.email"
+              type="success" variant="tonal" rounded="lg" class="text-left mb-4" density="compact"
+            >
               <div class="text-body-1 text-black">
                 A confirmation email has been sent to
                 <strong>{{ bookingStore.personalInfo.email }}</strong>.
@@ -88,11 +91,11 @@
                 <span class="text-body-2 text-black mb-3 font-weight-bold text-uppercase">Name</span>
                 <span class="text-body-1 text-black mb-3 font-weight-medium">{{ bookingStore.personalInfo.fullName }}</span>
               </div>
-              <div class="d-flex justify-space-between mb-1">
+              <div v-if="bookingStore.personalInfo.email" class="d-flex justify-space-between mb-1">
                 <span class="text-body-2 text-black mb-3 font-weight-bold text-uppercase">Email</span>
                 <span class="text-body-1 text-black mb-3 font-weight-medium">{{ bookingStore.personalInfo.email }}</span>
               </div>
-              <div class="d-flex justify-space-between mb-1">
+              <div v-if="bookingStore.personalInfo.phone" class="d-flex justify-space-between mb-1">
                 <span class="text-body-2 text-black mb-3 font-weight-bold text-uppercase">Phone</span>
                 <span class="text-body-1 text-black mb-3 font-weight-medium">{{ bookingStore.personalInfo.phone }}</span>
               </div>
@@ -287,12 +290,12 @@
                 <v-col cols="12" sm="6">
                   <v-text-field
                     v-model="bookingStore.personalInfo.email"
-                    label="Email"
+                    label="Email (or phone)"
                     prepend-inner-icon="mdi-email-outline"
                     variant="outlined"
                     density="comfortable"
                     rounded="lg"
-                    :rules="[rules.required, rules.email]"
+                    :rules="[rules.emailOrPhone]"
                     placeholder="john@example.com"
                     type="email"
                     persistent-placeholder
@@ -301,12 +304,12 @@
                 <v-col cols="12" sm="6">
                   <v-text-field
                     v-model="bookingStore.personalInfo.phone"
-                    label="Phone Number"
+                    label="Phone Number (or email)"
                     prepend-inner-icon="mdi-phone"
                     variant="outlined"
                     density="comfortable"
                     rounded="lg"
-                    :rules="[rules.required, rules.phone]"
+                    :rules="[rules.phoneOrEmail]"
                     placeholder="+1 (555) 123-4567"
                     persistent-placeholder
                   />
@@ -816,6 +819,12 @@ const rules = {
   requiredSelect: (v: any) => v !== null && v !== undefined || 'Please select a location',
   email: (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v) || 'Invalid email format',
   phone: (v: string) => v?.trim().length >= 7 || 'Phone number must be at least 7 characters',
+  emailOrPhone: (v: string) => v?.trim()
+    ? rules.email(v)
+    : !!bookingStore.personalInfo.phone?.trim() || 'Enter email or phone number',
+  phoneOrEmail: (v: string) => v?.trim()
+    ? rules.phone(v)
+    : !!bookingStore.personalInfo.email?.trim() || 'Enter phone number or email',
   minLength: (min: number) => (v: string) => v?.trim().length >= min || `Minimum ${min} characters`,
 };
 

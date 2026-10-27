@@ -173,10 +173,13 @@ export const useBookingStore = defineStore('booking', () => {
   const isPersonalInfoValid = computed(() => {
     const { fullName, email, phone } = personalInfo.value;
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const hasEmail = email.trim().length > 0;
+    const hasPhone = phone.trim().length > 0;
     return (
       fullName.trim().length >= 2 &&
-      emailRegex.test(email) &&
-      phone.trim().length >= 7
+      (hasEmail || hasPhone) &&
+      (!hasEmail || emailRegex.test(email)) &&
+      (!hasPhone || phone.trim().length >= 7)
     );
   });
 

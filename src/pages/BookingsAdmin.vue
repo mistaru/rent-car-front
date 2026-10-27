@@ -146,7 +146,7 @@ const filteredBookings = computed(() => {
     const q = searchText.value.toLowerCase();
     result = result.filter(b =>
       b.customer.fullName.toLowerCase().includes(q) ||
-      b.customer.email.toLowerCase().includes(q) ||
+      (b.customer.email || '').toLowerCase().includes(q) ||
       `${b.vehicle.brand} ${b.vehicle.model}`.toLowerCase().includes(q) ||
       String(b.id).includes(q)
     );
@@ -220,8 +220,8 @@ const openEdit = (booking: BookingAdmin) => {
     dropoffLocationId: booking.dropoffLocation?.id,
     status: booking.status,
     customerFullName: booking.customer.fullName,
-    customerEmail: booking.customer.email,
-    customerPhone: booking.customer.phone,
+    customerEmail: booking.customer.email ?? '',
+    customerPhone: booking.customer.phone ?? '',
     customerAdditionalInfo: '',
     managerComment: '',
   };
@@ -643,8 +643,8 @@ onMounted(fetchBookings);
                       Клиент
                     </div>
                     <div class="text-body-1 font-weight-bold">{{ selectedBooking.customer.fullName }}</div>
-                    <div class="text-body-2 text-medium-emphasis">{{ selectedBooking.customer.email }}</div>
-                    <div class="text-body-2 text-medium-emphasis">{{ selectedBooking.customer.phone }}</div>
+                    <div v-if="selectedBooking.customer.email" class="text-body-2 text-medium-emphasis">{{ selectedBooking.customer.email }}</div>
+                    <div v-if="selectedBooking.customer.phone" class="text-body-2 text-medium-emphasis">{{ selectedBooking.customer.phone }}</div>
                   </div>
                 </v-col>
 
@@ -938,7 +938,7 @@ onMounted(fetchBookings);
             <v-col cols="12" sm="6">
               <v-text-field
                 v-model="editForm.customerEmail"
-                label="Email"
+                label="Email (или телефон)"
                 variant="outlined"
                 rounded="lg"
                 density="comfortable"
@@ -948,7 +948,7 @@ onMounted(fetchBookings);
             <v-col cols="12" sm="6">
               <v-text-field
                 v-model="editForm.customerPhone"
-                label="Телефон"
+                label="Телефон (или email)"
                 variant="outlined"
                 rounded="lg"
                 density="comfortable"

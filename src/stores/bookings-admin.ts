@@ -28,8 +28,8 @@ export interface BookingAdmin {
   customer: {
     id: number;
     fullName: string;
-    email: string;
-    phone: string;
+    email: string | null;
+    phone: string | null;
   };
   pickupLocation: { id: number; name: string; city: string; country: string };
   dropoffLocation: { id: number; name: string; city: string; country: string };
